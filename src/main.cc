@@ -1,0 +1,50 @@
+/** @file main.cc
+ * Main class for coserver2. Only used for initialization.
+ * Run with -gui for GUI.
+ * @author Martin Lilleeng Sætra <martinls@met.no>
+ */
+
+// Qt-includes
+#include <QApplication>
+
+#include <stdlib.h>
+
+#include <miCommandLine.h>
+#include <QLetterCommands.h>
+#include <CoServer2.h>
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    
+    // parsing commandline-arguments
+	vector<miCommandLine::option> opt(4);
+
+	opt[0].flag = 'd';
+	opt[0].alias= "dynamic";
+	opt[0].hasArg= false;
+
+	opt[1].flag = 'v';
+	opt[1].alias= "visual";
+	opt[1].hasArg= false;
+
+	opt[2].flag = 'p';
+	opt[2].alias= "port";
+	opt[2].hasArg= true;
+
+	miCommandLine cl(opt, qApp->argc(), qApp->argv());
+	
+	quint16 port;
+	if (cl.hasFlag('p')) {
+		istringstream os((cl.arg('p'))[0]);
+		os >> port;
+	} else {
+		port = qmstrings::port;
+	}
+	
+	CoServer2 *server = new CoServer2(port, cl.hasFlag('d'), cl.hasFlag('v'));
+
+	if (!server->ready())
+		exit(1);
+
+	return app.exec();
+}
