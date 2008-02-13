@@ -7,17 +7,18 @@ SRCDIR=src
 LIBDIR=lib$(PLT)
 OBJDIR=obj$(PLT)
 BINDIR=bin$(PLT)
+LOCALINC=$(LOCALDIR)/include/
 INCDIR=../include
+	
+INCLUDE= -I$(INCDIR) \
+	 -I$(LOCALINC)	\
+     -I$(QTDIR)/Qt \
+     -I$(QTDIR)/QtGui \
+     -I$(QTDIR)/QtCore \
+     -I$(QTDIR)/Qt3Support \
+     -I$(QTDIR)/QtNetwork
 
-INCLUDE = -I /usr/include/QtCore \
-	-I /usr/include/QtGui \
-	-I /usr/include/QtNetwork \
-    $(QTINCLUDE) \
-    -I$(LOCALDIR)/include/qUtilities-coclient2 \
-    -I$(LOCALDIR)/include/puTools \
-	-I$(INCDIR)
-
-LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities-coclient2 -llog4cxx -lpuTools $(QTLIBDIR) $(QT_LIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
+LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities -llog4cxx -lpuTools $(QTLIBDIR) $(QT_LIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
 
 DEPENDSFILE=$(OBJDIR)/make.depends
 MOCFILE=$(OBJDIR)/make.moc

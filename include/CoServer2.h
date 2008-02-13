@@ -41,9 +41,9 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/level.h> 
 
-#include <miMessage.h>
-#include <CoSocket.h>
-#include <CoConsole.h>
+#include <qUtilities/miMessage.h>
+#include "CoSocket.h"
+#include "CoConsole.h"
 
 using namespace std; 
 

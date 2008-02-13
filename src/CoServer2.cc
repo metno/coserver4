@@ -39,8 +39,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include <QLetterCommands.h>
-#include <CoServer2.h>
+#include <qUtilities/QLetterCommands.h>
+#include "CoServer2.h"
 
 CoServer2::CoServer2(quint16 port,
         bool dm, bool vm) : QTcpServer() {

@@ -9,9 +9,9 @@
 
 #include <stdlib.h>
 
-#include <miCommandLine.h>
-#include <QLetterCommands.h>
-#include <CoServer2.h>
+#include <puTools/miCommandLine.h>
+#include <qUtilities/QLetterCommands.h>
+#include "CoServer2.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
