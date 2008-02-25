@@ -93,14 +93,15 @@ void CoServer2::broadcast(miMessage &msg) {
 		stringstream s;
 		s << it->first; ///< find current id for iterator element
 		string clientId(s.str());
+		string id;
 					
 		// do not send message back to sender
 		if(msg.commondesc == "id:type") {
-			string id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
+			id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
 		} else {
 			stringstream out;
 			out << msg.from;
-			string id = out.str();
+			id = out.str();
 		}
 		
 		if(!(id == clientId))
