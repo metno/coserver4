@@ -71,7 +71,7 @@ public:
 	
 private:
 	int id;
-	quint16 blockSize;
+	quint32 blockSize;
 	string type;
 	
 private slots:

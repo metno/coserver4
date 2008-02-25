@@ -90,19 +90,22 @@ void CoServer2::incomingConnection(int sock) {
 void CoServer2::broadcast(miMessage &msg) {
 	map<int, CoSocket*>::iterator it;
 	for(it = clients.begin(); it != clients.end(); it++) {		
+		stringstream s;
+		s << it->first; ///< find current id for iterator element
+		string clientId(s.str());
+					
 		// do not send message back to sender
 		if(msg.commondesc == "id:type") {
 			string id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
-			
-			stringstream s;
-			s << it->first; ///< find current id for iterator element
-			string clientId(s.str());
-			
-			if(!(id == clientId))
-				it->second->sendMessage(msg);
 		} else {
-			it->second->sendMessage(msg);
+			stringstream out;
+			out << msg.from;
+			string id = out.str();
 		}
+		
+		if(!(id == clientId))
+			it->second->sendMessage(msg);
+		
 	}
 }
 
@@ -137,15 +140,19 @@ void CoServer2::killClient(CoSocket *client) {
 void CoServer2::serve(miMessage &msg, CoSocket *client) {
     if (msg.to == -1) {
     	// broadcast message
+    	if (client != 0) {
+    		msg.from = client->getId();
+    	} else {
+    		msg.from = 0;
+    	}
+    	broadcast(msg);
     	LOG4CXX_DEBUG(logger, "Broadcast message relayed");
-		broadcast(msg);
 	} else if (msg.to == 0 && client != 0) {
 		// message is addressed to server
-		LOG4CXX_DEBUG(logger, "Server message received");
 		internal(msg, client);
+		LOG4CXX_DEBUG(logger, "Server message received");
 	} else {
 		// send message to the addressed client
-		LOG4CXX_DEBUG(logger, "Direct message relayed");
 		if (client != 0) {
 			msg.from = client->getId();
 		} else {
@@ -153,6 +160,7 @@ void CoServer2::serve(miMessage &msg, CoSocket *client) {
 		}
 		
 		clients[msg.to]->sendMessage(msg);
+		LOG4CXX_DEBUG(logger, "Direct message relayed");
 
 		if (visualMode && msg.from) {
 			cerr << msg.content();
@@ -215,5 +223,5 @@ void CoServer2::internal(miMessage &msg, CoSocket *client) {
 				}
 			}
 		}
-    }
+  }
 }

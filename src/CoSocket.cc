@@ -74,7 +74,7 @@ void CoSocket::readNew() {
 #endif
 	
 	if (blockSize == 0) {
-		if (bytesAvailable() < (int)sizeof(quint16))
+		if (bytesAvailable() < (int)sizeof(quint32))
 			return;
 
 		in >> blockSize;
@@ -131,7 +131,7 @@ void CoSocket::sendMessage(miMessage &msg) {
 		out.setVersion(QDataStream::Qt_4_0);
 
 		// send message to server
-		out << (quint16)0;
+		out << (quint32)0;
 
 		out << msg.to;
 		out << msg.from;
@@ -146,7 +146,7 @@ void CoSocket::sendMessage(miMessage &msg) {
 			out << QString(msg.data[i].cStr());
 		
 		out.device()->seek(0);
-		out << (quint16)(block.size() - sizeof(quint16));
+		out << (quint32)(block.size() - sizeof(quint32));
 
 		write(block);
 		flush();
