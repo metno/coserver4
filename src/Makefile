@@ -22,9 +22,9 @@ ALLOBJ= $(CCOBJ) $(QOBJ) $(MOCOBJ)
 .cc.o:
 	$(CXX) -g -c $(CCFLAGS) $< $(INCLUDE)
 
-all: mark $(BINDIR)/coserver2
+all: mark $(BINDIR)/coserver4
 
-$(BINDIR)/coserver2: $(ALLOBJ)
+$(BINDIR)/coserver4: $(ALLOBJ)
 	$(CXX) -o $@ $(CCFLAGS) -g $(ALLOBJ) $(LINKS) 
 
 #----------------------------------------------------------------------------

@@ -9,7 +9,7 @@ OBJDIR=obj$(PLT)
 BINDIR=bin$(PLT)
 LOCALINC=$(LOCALDIR)/include/
 INCDIR=../include
-	
+
 INCLUDE= -I$(INCDIR) \
 	 -I$(LOCALINC)	\
      -I$(QTDIR)/Qt \
@@ -60,7 +60,7 @@ veryclean:
 	rm -rf $(OBJDIR)
 
 # install
-COPYFILES=bin/coserver2
+COPYFILES=bin/coserver4
 COPYDIRS=
 COPYTREES=
 DESTNAME=
