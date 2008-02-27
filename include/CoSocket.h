@@ -35,10 +35,11 @@
 // Qt-includes
 #include <QTcpSocket>
 
+#ifdef HAVE_LOG4CXX
 #include <log4cxx/logger.h>
-#include <log4cxx/propertyconfigurator.h>
-#include <log4cxx/basicconfigurator.h>
-#include <log4cxx/level.h> 
+#else
+#include <miLogger/logger.h>
+#endif
 
 #include <qUtilities/miMessage.h>
 
@@ -48,7 +49,9 @@ class CoSocket : public QTcpSocket {
 	Q_OBJECT
 	
 protected:
+#ifdef HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger;
+#endif
 	
 public:
 	void setId(int);

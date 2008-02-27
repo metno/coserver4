@@ -48,8 +48,10 @@ CoServer2::CoServer2(quint16 port,
     visualMode = vm;
     dynamicMode = dm;
     
+#ifdef HAVE_LOG4CXX
     logger = log4cxx::Logger::getLogger("coserver2.CoServer2"); ///< LOG4CXX init
     log4cxx::PropertyConfigurator::configure("log4cxx.properties");
+#endif
 
     if(dynamicMode)
         cout << "Started" << endl;

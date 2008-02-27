@@ -37,9 +37,12 @@
 #include <vector>
 #include <map>
 
+#ifdef HAVE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
-#include <log4cxx/level.h> 
+#else
+#include <miLogger/logger.h>
+#endif
 
 #include <qUtilities/miMessage.h>
 #include "CoSocket.h"
@@ -51,7 +54,9 @@ class CoServer2 : public QTcpServer {
     Q_OBJECT
     
 protected:
+#ifdef HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger;
+#endif
     
 private:
     map<int, CoSocket*> clients;

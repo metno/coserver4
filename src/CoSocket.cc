@@ -38,7 +38,9 @@
 #include <CoServer2.h>
 
 CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
+#ifdef HAVE_LOG4CXX
 	logger = log4cxx::Logger::getLogger("coserver2.CoSocket"); ///< LOG4CXX init
+#endif
 	blockSize = 0;
 	    
 	setSocketDescriptor(sock);

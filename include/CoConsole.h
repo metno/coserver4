@@ -38,9 +38,11 @@
 #include <QLabel>
 #include <QDialog>
 
+#ifdef HAVE_LOG4CXX
 #include <log4cxx/logger.h>
-#include <log4cxx/propertyconfigurator.h>
-#include <log4cxx/level.h> 
+#else
+#include <miLogger/logger.h>
+#endif
 
 using namespace std;
 
@@ -48,7 +50,9 @@ class CoConsole : public QDialog {
 	Q_OBJECT;
 	
 protected:
+#ifdef HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger;
+#endif
 	
 public:
 	/**

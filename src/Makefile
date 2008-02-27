@@ -17,15 +17,15 @@ ALLOBJ= $(CCOBJ) $(QOBJ) $(MOCOBJ)
 
 # From .c to .o
 .c.o:
-	$(CC) -g -c $(CFLAGS) $< $(INCLUDE)
+	$(CC) -c $(CFLAGS) $< $(INCLUDE)
 
 .cc.o:
-	$(CXX) -g -c $(CCFLAGS) $< $(INCLUDE)
+	$(CXX) -c $(CCFLAGS) $< $(INCLUDE)
 
 all: mark $(BINDIR)/coserver4
 
 $(BINDIR)/coserver4: $(ALLOBJ)
-	$(CXX) -o $@ $(CCFLAGS) -g $(ALLOBJ) $(LINKS) 
+	$(CXX) -o $@ $(CCFLAGS) $(ALLOBJ) $(LINKS) 
 
 #----------------------------------------------------------------------------
 

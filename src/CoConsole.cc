@@ -37,7 +37,9 @@
 CoConsole::CoConsole() : QDialog() {
 	setWindowTitle("CoServer2");
 	
+#ifdef HAVE_LOG4CXX
 	logger = log4cxx::Logger::getLogger("coserver2.CoConsole"); ///< LOG4CXX init
+#endif
 	
 	// set dialog layout
 	QVBoxLayout *layout = new QVBoxLayout;
