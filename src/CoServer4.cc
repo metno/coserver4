@@ -141,17 +141,18 @@ void CoServer4::killClient(CoSocket *client) {
 }
 
 void CoServer4::serve(miMessage &msg, CoSocket *client) {
-    if (msg.to == -1) {
-    	// broadcast message
-    	if (client != 0) {
-    		msg.from = client->getId();
-    	} else {
-    		msg.from = 0;
-    	}
-    	broadcast(msg);
-    	LOG4CXX_DEBUG(logger, "Broadcast message relayed");
+  if (msg.to == -1) {
+   	// broadcast message
+   	if (client != 0) {
+   		msg.from = client->getId();
+   	} else {
+   		msg.from = 0;
+   	}
+   	internal(msg, client); ///< broadcast to server also
+   	broadcast(msg);
+   	LOG4CXX_DEBUG(logger, "Broadcast message relayed");
 	} else if (msg.to == 0 && client != 0) {
-		// message is addressed to server
+		// message is addressed to server (not in use??)
 		internal(msg, client);
 		LOG4CXX_DEBUG(logger, "Server message received");
 	} else {
