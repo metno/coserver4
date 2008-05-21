@@ -1,5 +1,5 @@
 CCOBJ= main.o
-QOBJ= CoServer2.o CoSocket.o CoConsole.o
+QOBJ= CoServer4.o CoSocket.o CoConsole.o
 
 #----------------------------------------------------------------------------
 

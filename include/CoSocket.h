@@ -1,7 +1,7 @@
 /** @file CoSocket.h
  * @author Martin Lilleeng Sætra <martinls@met.no>
  * 
- * coserver2
+ * coserver4
  * 
  * $Id: CoSocket.h,v 1.7 2007/09/04 10:34:45 martinls Exp $
  *

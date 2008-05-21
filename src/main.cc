@@ -1,5 +1,5 @@
 /** @file main.cc
- * Main class for coserver2. Only used for initialization.
+ * Main class for coserver4. Only used for initialization.
  * Run with -gui for GUI.
  * @author Martin Lilleeng Sætra <martinls@met.no>
  */
@@ -11,7 +11,7 @@
 
 #include <puTools/miCommandLine.h>
 #include <qUtilities/QLetterCommands.h>
-#include "CoServer2.h"
+#include "CoServer4.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 		port = qmstrings::port;
 	}
 	
-	CoServer2 *server = new CoServer2(port, cl.hasFlag('d'), cl.hasFlag('v'));
+	CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'));
 
 	if (!server->ready())
 		exit(1);

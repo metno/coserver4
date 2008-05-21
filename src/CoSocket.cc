@@ -35,11 +35,11 @@
 #include <iostream>
 
 #include <CoSocket.h>
-#include <CoServer2.h>
+#include <CoServer4.h>
 
 CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
 #ifdef HAVE_LOG4CXX
-	logger = log4cxx::Logger::getLogger("coserver2.CoSocket"); ///< LOG4CXX init
+	logger = log4cxx::Logger::getLogger("coserver4.CoSocket"); ///< LOG4CXX init
 #endif
 	blockSize = 0;
 	    
@@ -66,7 +66,7 @@ string CoSocket::getType(void) {
 }
 
 void CoSocket::readNew() {
-	CoServer2* server = (CoServer2*)parent();
+	CoServer4* server = (CoServer4*)parent();
 	QDataStream in(this);
 	in.setVersion(QDataStream::Qt_4_0);
 	
@@ -158,6 +158,6 @@ void CoSocket::sendMessage(miMessage &msg) {
 }
 
 void CoSocket::connectionClosed() {
-	CoServer2* server = (CoServer2*)parent();
+	CoServer4* server = (CoServer4*)parent();
 	server->killClient(this);
 }

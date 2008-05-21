@@ -1,7 +1,7 @@
-/** @mainpage coserver2
+/** @mainpage coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
  * 
- * $Id: CoServer2.h,v 1.9 2007/09/04 10:34:45 martinls Exp $
+ * $Id: CoServer4.h,v 1.9 2007/09/04 10:34:45 martinls Exp $
  *
  * Copyright (C) 2007 met.no
  *
@@ -27,8 +27,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _COSERVER2
-#define _COSERVER2
+#ifndef _COSERVER4
+#define _COSERVER4
 
 // Qt-includes
 #include <QTcpSocket>
@@ -50,7 +50,7 @@
 
 using namespace std; 
 
-class CoServer2 : public QTcpServer {
+class CoServer4 : public QTcpServer {
     Q_OBJECT
     
 protected:
@@ -86,12 +86,12 @@ private:
 
 public:
 	/**
-	 * CoServer2.
+	 * CoServer4.
 	 * @param port Port to connect to
 	 * @param vm Run in visual (GUI) mode
 	 * @param dm Run in dynamic mode
 	 */
-    CoServer2(quint16 port, bool vm, bool dm);
+    CoServer4(quint16 port, bool vm, bool dm);
 
     /**
      * Process incoming message.
@@ -102,7 +102,7 @@ public:
     
     /**
      * Kills a client, and then notifies the other clients of the event.
-     * Will shut down coserver2 if in dynamicMode and no more
+     * Will shut down coserver4 if in dynamicMode and no more
      * clients are connected.
      * @param client Client to remove
      */

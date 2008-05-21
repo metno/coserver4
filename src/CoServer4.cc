@@ -1,8 +1,8 @@
 /**
- * coserver2
+ * coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
  * 
- * $Id: CoServer2.cc,v 1.22 2007/09/04 11:00:40 martinls Exp $
+ * $Id: CoServer4.cc,v 1.22 2007/09/04 11:00:40 martinls Exp $
  *
  * Copyright (C) 2007 met.no
  *
@@ -40,16 +40,16 @@
 #include <stdlib.h>
 
 #include <qUtilities/QLetterCommands.h>
-#include "CoServer2.h"
+#include "CoServer4.h"
 
-CoServer2::CoServer2(quint16 port,
+CoServer4::CoServer4(quint16 port,
         bool dm, bool vm) : QTcpServer() {
     id = 0;
     visualMode = vm;
     dynamicMode = dm;
     
 #ifdef HAVE_LOG4CXX
-    logger = log4cxx::Logger::getLogger("coserver2.CoServer2"); ///< LOG4CXX init
+    logger = log4cxx::Logger::getLogger("coserver4.CoServer4"); ///< LOG4CXX init
     log4cxx::PropertyConfigurator::configure("log4cxx.properties");
 #endif
 
@@ -59,7 +59,7 @@ CoServer2::CoServer2(quint16 port,
     listen(QHostAddress::Any, port);
 
     if(isListening()) {
-    	LOG4CXX_INFO(logger, "coserver2 listening on port " << port);
+    	LOG4CXX_INFO(logger, "coserver4 listening on port " << port);
     } else {
     	LOG4CXX_ERROR(logger, "Failed to bind to port");
     }
@@ -70,7 +70,7 @@ CoServer2::CoServer2(quint16 port,
 	}
 }
 
-void CoServer2::incomingConnection(int sock) {
+void CoServer4::incomingConnection(int sock) {
 	// fetch incoming connection (socket)
     CoSocket *client = new CoSocket(sock, this);
     
@@ -89,7 +89,7 @@ void CoServer2::incomingConnection(int sock) {
 #endif
 }
 
-void CoServer2::broadcast(miMessage &msg) {
+void CoServer4::broadcast(miMessage &msg) {
 	map<int, CoSocket*>::iterator it;
 	for(it = clients.begin(); it != clients.end(); it++) {		
 		stringstream s;
@@ -112,7 +112,7 @@ void CoServer2::broadcast(miMessage &msg) {
 	}
 }
 
-void CoServer2::killClient(CoSocket *client) {
+void CoServer4::killClient(CoSocket *client) {
 	// tell the other connected clients of the disconnecting client
     QString data;
     QTextStream s(&data, QIODevice::WriteOnly);
@@ -140,7 +140,7 @@ void CoServer2::killClient(CoSocket *client) {
 		QApplication::exit(1);
 }
 
-void CoServer2::serve(miMessage &msg, CoSocket *client) {
+void CoServer4::serve(miMessage &msg, CoSocket *client) {
     if (msg.to == -1) {
     	// broadcast message
     	if (client != 0) {
@@ -171,15 +171,15 @@ void CoServer2::serve(miMessage &msg, CoSocket *client) {
 	}
 }
 
-int CoServer2::newId() {
+int CoServer4::newId() {
     return ++id;
 }
 
-bool CoServer2::ready() {
+bool CoServer4::ready() {
 	return isListening();
 }
 
-void CoServer2::internal(miMessage &msg, CoSocket *client) {
+void CoServer4::internal(miMessage &msg, CoSocket *client) {
     if (msg.command == "SETTYPE") {
     	// set type in list of clients
         client->setType(msg.data[0].cStr());
