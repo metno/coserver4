@@ -12,9 +12,9 @@ INCDIR=../include
 
 INCLUDE= -I$(INCDIR) \
 	 -I$(LOCALINC)	\
-     -I$(QTDIR)/QtGui \
-     -I$(QTDIR)/QtCore \
-     -I$(QTDIR)/QtNetwork
+     -I$(QTDIR)/include/QtGui \
+     -I$(QTDIR)/include/QtCore \
+     -I$(QTDIR)/include/QtNetwork
 
 LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities -lpuTools $(QTLIBDIR) $(QT_LIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
 
