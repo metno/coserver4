@@ -1,0 +1,12 @@
+coserver4 - Version 3.1.0
+Connects met.no applications, e.g., Diana and modfly.
+
+Description
+===========
+Works as a server which other met.no applications can connect to in order to 
+exchange messages and cooperate. coserver4 uses sockets to communicate with its
+clients.
+
+Requirements
+============
+Qt 4.2 or later.
