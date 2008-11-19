@@ -64,7 +64,7 @@ veryclean:
 COPYFILES=bin/coserver4
 COPYDIRS=
 COPYTREES=
-DESTNAME=
+DESTNAME=coserver4-3.1.0
 
 include ../conf/install.mk
 
