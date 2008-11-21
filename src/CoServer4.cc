@@ -64,7 +64,7 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getWarn());
   }
 
-  log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("coserver4.CoServer4"));
+  logger = log4cxx::Logger::getLogger("coserver4.CoServer4");
 #endif
 
   if (dynamicMode)
