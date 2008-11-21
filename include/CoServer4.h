@@ -1,6 +1,6 @@
 /** @mainpage coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
- * 
+ *
  * $Id: CoServer4.h,v 1.9 2007/09/04 10:34:45 martinls Exp $
  *
  * Copyright (C) 2007 met.no
@@ -48,66 +48,69 @@
 #include "CoSocket.h"
 #include "CoConsole.h"
 
-using namespace std; 
+using namespace std;
 
-class CoServer4 : public QTcpServer {
-    Q_OBJECT
-    
+class CoServer4: public QTcpServer {
+Q_OBJECT
+
 protected:
 #ifdef HAVE_LOG4CXX
-	log4cxx::LoggerPtr logger;
+  log4cxx::LoggerPtr logger;
 #endif
-    
-private:
-    map<int, CoSocket*> clients;
-    CoConsole *console;
 
-    /**
-     * Internal helper function. Sets type of new connecting client,
-     * and transmit a list of already connected clients.
-     * @param msg The message
-     * @param client The originating client
-     */
-    void internal(miMessage &msg, CoSocket *client);
-    int id ;
-    int newId();
-    bool dynamicMode,visualMode;
-    
-    /**
-     * Broadcasts a message to all connected clients.
-     * @param msg Message to broadcast
-     */
-    void broadcast(miMessage &msg);
-    
-    /**
-     * Handles new connecting clients.
-     */
-    void incomingConnection(int);
+private:
+  map<int, CoSocket*> clients;
+  CoConsole *console;
+
+  /**
+   * Internal helper function. Sets type of new connecting client,
+   * and transmit a list of already connected clients.
+   * @param msg The message
+   * @param client The originating client
+   */
+  void internal(miMessage &msg, CoSocket *client);
+  int id;
+  int newId();
+  bool dynamicMode, visualMode;
+
+  /**
+   * Broadcasts a message to all connected clients.
+   * @param msg Message to broadcast
+   */
+  void broadcast(miMessage &msg);
+
+  /**
+   * Handles new connecting clients.
+   */
+  void incomingConnection(int);
 
 public:
-	/**
-	 * CoServer4.
-	 * @param port Port to connect to
-	 * @param vm Run in visual (GUI) mode
-	 * @param dm Run in dynamic mode
-	 */
-    CoServer4(quint16 port, bool vm, bool dm);
+  /**
+   * CoServer4.
+   * @param port Port to connect to
+   * @param vm Run in visual (GUI) mode
+   * @param dm Run in dynamic mode
+   * @param logPropFile When given, log4cxx will use logPropFilename as properties file
+   * @param logPropFilename The log4cxx properties file
+   */
+  CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
+      string logPropFilename = "");
 
-    /**
-     * Process incoming message.
-     * @param l The message
-     * @param client The originating client
-     */
-    void serve(miMessage &l, CoSocket* client = 0);
-    
-    /**
-     * Kills a client, and then notifies the other clients of the event.
-     * Will shut down coserver4 if in dynamicMode and no more
-     * clients are connected.
-     * @param client Client to remove
-     */
-    void killClient(CoSocket* client);
-    bool ready(void);
+  /**
+   * Process incoming message.
+   * @param l The message
+   * @param client The originating client
+   */
+  void serve(miMessage &l, CoSocket* client = 0);
+
+  /**
+   * Kills a client, and then notifies the other clients of the event.
+   * Will shut down coserver4 if in dynamicMode and no more
+   * clients are connected.
+   * @param client Client to remove
+   */
+  void killClient(CoSocket* client);
+  bool ready(void);
 };
 
 #endif

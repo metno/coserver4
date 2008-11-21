@@ -13,38 +13,44 @@
 #include <qUtilities/QLetterCommands.h>
 #include "CoServer4.h"
 
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    
-    // parsing commandline-arguments
-	vector<miCommandLine::option> opt(4);
+int main(int argc, char *argv[])
+{
+  QApplication app(argc, argv);
 
-	opt[0].flag = 'd';
-	opt[0].alias= "dynamic";
-	opt[0].hasArg= false;
+  // parsing commandline-arguments
+  vector<miCommandLine::option> opt(5);
 
-	opt[1].flag = 'v';
-	opt[1].alias= "visual";
-	opt[1].hasArg= false;
+  opt[0].flag = 'd';
+  opt[0].alias = "dynamic";
+  opt[0].hasArg = false;
 
-	opt[2].flag = 'p';
-	opt[2].alias= "port";
-	opt[2].hasArg= true;
+  opt[1].flag = 'v';
+  opt[1].alias = "visual";
+  opt[1].hasArg = false;
 
-	miCommandLine cl(opt, qApp->argc(), qApp->argv());
-	
-	quint16 port;
-	if (cl.hasFlag('p')) {
-		istringstream os((cl.arg('p'))[0]);
-		os >> port;
-	} else {
-		port = qmstrings::port;
-	}
-	
-	CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'));
+  opt[2].flag = 'p';
+  opt[2].alias = "port";
+  opt[2].hasArg = true;
 
-	if (!server->ready())
-		exit(1);
+  opt[3].flag = 'L';
+  opt[3].alias = "log4cxx-properties-file";
+  opt[3].hasArg = true;
 
-	return app.exec();
+  miCommandLine cl(opt, qApp->argc(), qApp->argv());
+
+  quint16 port;
+  if (cl.hasFlag('p')) {
+    istringstream os((cl.arg('p'))[0]);
+    os >> port;
+  } else {
+    port = qmstrings::port;
+  }
+
+  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
+      cl.hasFlag('L'), cl.arg('L')[0]);
+
+  if (!server->ready())
+    exit(1);
+
+  return app.exec();
 }
