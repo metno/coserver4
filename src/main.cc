@@ -45,9 +45,14 @@ int main(int argc, char *argv[])
   } else {
     port = qmstrings::port;
   }
+  string logPropFilename;
+  if (cl.hasFlag('p')) {
+    istringstream os((cl.arg('L'))[0]);
+    os >> logPropFilename;
+  }
 
   CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
-      cl.hasFlag('L'), cl.arg('L')[0]);
+      cl.hasFlag('L'), logPropFilename);
 
   if (!server->ready())
     exit(1);

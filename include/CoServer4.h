@@ -40,6 +40,7 @@
 #ifdef HAVE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/basicconfigurator.h>
 #else
 #include <miLogger/logger.h>
 #endif

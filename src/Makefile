@@ -17,10 +17,10 @@ ALLOBJ= $(CCOBJ) $(QOBJ) $(MOCOBJ)
 
 # From .c to .o
 .c.o:
-	$(CC) -c $(CFLAGS) $< $(INCLUDE)
+	$(CC) $(DEFINES) -c $(CFLAGS) $< $(INCLUDE)
 
 .cc.o:
-	$(CXX) -c $(CCFLAGS) $< $(INCLUDE)
+	$(CXX) $(DEFINES) -c $(CCFLAGS) $< $(INCLUDE)
 
 all: mark $(BINDIR)/coserver4
 
