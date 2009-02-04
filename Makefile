@@ -13,6 +13,8 @@ INCDIR=../include
 INCLUDE= -I$(INCDIR) \
 	 -I$(LOCALINC)	\
      $(QTINCLUDE)
+# overrides 64 bit ark
+QTLIBDIR= -L/usr/lib64
 
 LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities -lpuTools $(QTLIBDIR) $(QT_LIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
 
