@@ -143,7 +143,7 @@ void CoSocket::sendMessage(miMessage &msg) {
 		out << QString(msg.common.cStr());
 		out << QString(msg.clientType.cStr());
 		out << QString(msg.co.cStr());
-		out << msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
+		out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 		for (int i = 0; i < msg.data.size(); i++)
 			out << QString(msg.data[i].cStr());
 		
