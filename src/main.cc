@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 
   // parsing commandline-arguments
   vector<miCommandLine::option> opt(5);
+  miString logfile;  
 
   opt[0].flag = 'd';
   opt[0].alias = "dynamic";
@@ -46,9 +47,17 @@ int main(int argc, char *argv[])
     port = qmstrings::port;
   }
 
-  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
-      cl.hasFlag('L'), cl.arg('L')[0]);
+  if (cl.arg('L').size() > 0) {
+	  logfile = cl.arg('L')[0];
+  } else {
+	  logfile = "";
+  }  
+//  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
+//      cl.hasFlag('L'), cl.arg('L')[0]);
 
+  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
+      cl.hasFlag('L'), logfile);
+   
   if (!server->ready())
     exit(1);
 

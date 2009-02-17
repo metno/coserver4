@@ -46,15 +46,19 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     string logPropFilename) :
   QTcpServer()
 {
+
   id = 0;
   visualMode = vm;
   dynamicMode = dm;
 
+  
+#ifdef HAVE_LOG4CXX
   /// LOGGER
   miString logpro;
   if (logPropFile) {
     logpro = logPropFilename;
   }
+#endif
 
 #ifdef HAVE_LOG4CXX
   if ( logpro.exists() ) {
@@ -72,12 +76,14 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
 
   listen(QHostAddress::Any, port);
 
+#ifdef HAVE_LOG4CXX
   if (isListening()) {
     LOG4CXX_INFO(logger, "coserver4 listening on port " << port);
   } else {
     LOG4CXX_ERROR(logger, "Failed to bind to port");
   }
-
+#endif
+  
   console = new CoConsole();
   if (visualMode) {
     console->show();
