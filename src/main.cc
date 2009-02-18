@@ -6,21 +6,41 @@
 
 // Qt-includes
 #include <QApplication>
-
 #include <stdlib.h>
-
 #include <puTools/miCommandLine.h>
 #include <qUtilities/QLetterCommands.h>
 #include "CoServer4.h"
 
 int main(int argc, char *argv[])
 {
-  QApplication app(argc, argv);
-
+	#ifdef _DEBUG	
+		cerr << "Coserver main program called" << endl;
+	#endif		
+	
+	QApplication app(argc, argv);
+  
+	#ifdef _DEBUG
+		cerr << "argc: " << argc << endl;
+	  
+		for(int i=0;i<argc;i++) {
+			cerr << "argv: " << miString(argv[i]) << endl;
+		}
+	#endif
+		
   // parsing commandline-arguments
   vector<miCommandLine::option> opt(5);
-  miString logfile;  
+  miString logfile;    
+  CoServer4 *server;    
 
+  /*  
+  // TODO: Put these in configfile
+bool portFromRange = false;
+  vector<quint16> portRange(10);
+  
+  for (int i = 0; i < 9; i++) {
+	  portRange[i] = (quint16)49151 + i;  
+  }
+*/
   opt[0].flag = 'd';
   opt[0].alias = "dynamic";
   opt[0].hasArg = false;
@@ -38,28 +58,49 @@ int main(int argc, char *argv[])
   opt[3].hasArg = true;
 
   miCommandLine cl(opt, qApp->argc(), qApp->argv());
-
+  
   quint16 port;
+  quint16 fileport;
+  
   if (cl.hasFlag('p')) {
-    istringstream os((cl.arg('p'))[0]);
-    os >> port;
+	cerr << "P flag sent" << endl;
+    //istringstream os((cl.arg('p'))[0]);
+    //os >> port;
+    
+	if (cl.arg('p').size() >= 0) {
+		port = miString(cl.arg('p')[0]).toInt(0);
+	} else {
+		#ifdef _DEBUG
+			cerr << "cl.arg('p').size() == 0" << cl.arg('p').size() << endl;
+		#endif
+		port = qmstrings::port;
+	}
+/*  } else if (server->readPortFromFile(fileport) == 0) {
+	  cerr << "Port read from file: " << fileport << endl;
+	  port = fileport;
+  //} else if (portFromRange == false) {
+   */
   } else {
+	#ifdef _DEBUG	  
+	  cerr << "Flag p not set!!!"  << endl;
+	#endif	
     port = qmstrings::port;
   }
-
+  
   if (cl.arg('L').size() > 0) {
 	  logfile = cl.arg('L')[0];
   } else {
 	  logfile = "";
   }  
-//  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
-//      cl.hasFlag('L'), cl.arg('L')[0]);
-
-  CoServer4 *server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'),
-      cl.hasFlag('L'), logfile);
-   
+ 
+#ifdef _DEBUG
+  cerr << "Port is really set to: " << port << endl;
+#endif
+  
+  server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'), cl.hasFlag('L'), logfile);
+ 
   if (!server->ready())
     exit(1);
-
+    
   return app.exec();
 }
