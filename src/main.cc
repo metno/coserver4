@@ -86,7 +86,6 @@ bool portFromRange = false;
 	#endif	
     port = qmstrings::port;
   }
-  
   if (cl.arg('L').size() > 0) {
 	  logfile = cl.arg('L')[0];
   } else {
@@ -96,9 +95,15 @@ bool portFromRange = false;
 #ifdef _DEBUG
   cerr << "Port is really set to: " << port << endl;
 #endif
-  
-  server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'), cl.hasFlag('L'), logfile);
- 
+
+  string logPropFilename;
+  if (cl.hasFlag('p')) {
+    istringstream os((cl.arg('L'))[0]);
+    os >> logPropFilename;
+  }
+
+  server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'), cl.hasFlag('L'), logPropFilename);
+
   if (!server->ready())
     exit(1);
     

@@ -1,7 +1,7 @@
 # includefile contains Compiler definitions
 include ../conf/${OSTYPE}.mk
 
-DEFINES=
+DEFINES=$(LOGGDEF)
 
 SRCDIR=src
 LIBDIR=lib$(PLT)
@@ -14,18 +14,13 @@ INCLUDE= -I$(INCDIR) \
 	 -I$(LOCALINC)	\
      $(QTINCLUDE)
 
-LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities -lpuTools $(QTLIBDIR) $(QT_LIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
+LINKS= -L$(LOCALDIR)/$(LIBDIR) -lqUtilities -lpuTools $(QTLIBDIR) $(QT_LIBS) $(LOGGLIBS) $(XLIBDIR) -lXext -lXt -lX11 -lm
 
 DEPENDSFILE=$(OBJDIR)/make.depends
 MOCFILE=$(OBJDIR)/make.moc
 
 
 OPTIONS="LEX=${LEX}" "CXX=${CXX}" "CCFLAGS=${CXXFLAGS} ${DEFINES}" "CC=${CC}" "CFLAGS=${CFLAGS} ${DEFINES}" "LDFLAGS=${CXXLDFLAGS}" "AR=${AR}" "ARFLAGS=${ARFLAGS}" "INCLUDE=${INCLUDE}" "LIBDIR=${LIBDIR}" "DEPENDSFILE=../${DEPENDSFILE}" "BINDIR=../${BINDIR}" "LOCALDIR=${LOCALDIR}" "XLIBDIR=${XLIBDIR}" "GLLIBDIR=${GLLIBDIR}" "QTDIR=${QTDIR}" "LINKS=${LINKS}" "MOC=${MOC}" "MOCFILE=../${MOCFILE}" "INCDIR=${INCDIR}"
-
-ifdef HAVE_LOG4CXX
-	DEFINES += -DHAVE_LOG4CXX
-	LINKS += -llog4cxx 
-endif
 
 all: directories mocs server
 
