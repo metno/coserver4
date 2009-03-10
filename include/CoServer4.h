@@ -62,6 +62,7 @@ protected:
 private:
   map<int, CoSocket*> clients;
   CoConsole *console;
+  quint16 port;
 
   /**
    * Internal helper function. Sets type of new connecting client,
@@ -85,6 +86,8 @@ private:
    */
   void incomingConnection(int);
 
+  //int writePortToFile();
+  
 public:
   /**
    * CoServer4.
@@ -96,7 +99,7 @@ public:
    */
   CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
       string logPropFilename = "");
-
+    
   /**
    * Process incoming message.
    * @param l The message
@@ -112,6 +115,9 @@ public:
    */
   void killClient(CoSocket* client);
   bool ready(void);
+  
+  //int readPortFromFile(quint16& port);
+    
 };
 
 #endif
