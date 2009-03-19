@@ -97,7 +97,7 @@ int CoServer4::writePortToFile() {
 	
 	if (homePath.length() > 0) {
 		FILE *pfile;
-		pfile = fopen(miString(homePath + "/.diana.port").cStr(), "w");
+		pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
 		if (pfile != NULL) {
 			cerr << "File created" << endl;
 			fputs(miString(miString(port) + "\n").cStr(), pfile);
@@ -120,7 +120,7 @@ int CoServer4::readPortFromFile(quint16& port) {
 	FILE *pfile;
 	char fileContent[10];
 	
-	pfile = fopen(miString(homePath + "/.diana.port").cStr(), "r");
+	pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
 	if (pfile == NULL) {
 		cerr << "Error opening diana.port" << endl;
 		return 1;
