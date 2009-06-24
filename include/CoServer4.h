@@ -79,7 +79,7 @@ private:
    * Broadcasts a message to all connected clients.
    * @param msg Message to broadcast
    */
-  void broadcast(miMessage &msg);
+  void broadcast(miMessage &msg, int userId = 0);
 
   /**
    * Handles new connecting clients.
@@ -87,7 +87,7 @@ private:
   void incomingConnection(int);
 
   //int writePortToFile();
-  
+
 public:
   /**
    * CoServer4.
@@ -99,7 +99,7 @@ public:
    */
   CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
       string logPropFilename = "");
-    
+
   /**
    * Process incoming message.
    * @param l The message
@@ -115,9 +115,9 @@ public:
    */
   void killClient(CoSocket* client);
   bool ready(void);
-  
+
   //int readPortFromFile(quint16& port);
-    
+
 };
 
 #endif

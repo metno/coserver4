@@ -49,7 +49,7 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
   id = 0;
   visualMode = vm;
   dynamicMode = dm;
-  
+
 #ifdef HAVE_LOG4CXX
   /// LOGGER
   miString logpro;
@@ -73,10 +73,10 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
 	  cout << "Started" << endl;
 	  #ifdef _DEBUG
 	  	cerr << "Started dynamic mode" << endl;
-	  #endif	  
+	  #endif
   }
-  
-  listen(QHostAddress::Any, port);  
+
+  listen(QHostAddress::Any, port);
 
 #ifdef HAVE_LOG4CXX
   if (isListening()) {
@@ -85,16 +85,16 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     LOG4CXX_ERROR(logger, "Failed to bind to port");
   }
 #endif
-  
+
   console = new CoConsole();
   if (visualMode) {
     console->show();
-  }  
+  }
 }
 /*
 int CoServer4::writePortToFile() {
 	miString homePath = miString(getenv("HOME"));
-	
+
 	if (homePath.length() > 0) {
 		FILE *pfile;
 		pfile = fopen(miString(homePath + "/.diana.port").cStr(), "w");
@@ -105,7 +105,7 @@ int CoServer4::writePortToFile() {
 		} else {
 			cerr << "File NOT created" << endl;
 		}
-		return 0;	
+		return 0;
 	} else {
 		cerr << "Path to users HOME not found." << endl;
 		return 1;
@@ -119,20 +119,20 @@ int CoServer4::readPortFromFile(quint16& port) {
 	miString homePath = miString(getenv("HOME"));
 	FILE *pfile;
 	char fileContent[10];
-	
+
 	pfile = fopen(miString(homePath + "/.diana.port").cStr(), "r");
 	if (pfile == NULL) {
 		cerr << "Error opening diana.port" << endl;
 		return 1;
-	} else {		
+	} else {
 		fgets(fileContent, 10, pfile);
 		puts(fileContent);
 		fclose(pfile);
 		port = miString(fileContent).toInt(0);
-		
+
 		cerr << "Port is set to: " << port << endl;
-	}		
-	return 0;	
+	}
+	return 0;
 }
 */
 void CoServer4::incomingConnection(int sock)
@@ -155,8 +155,10 @@ void CoServer4::incomingConnection(int sock)
 #endif
 }
 
-void CoServer4::broadcast(miMessage &msg)
+void CoServer4::broadcast(miMessage &msg, int userId)
 {
+
+  LOG4CXX_DEBUG(logger, "broadcast userId: " << userId << endl);
   map<int, CoSocket*>::iterator it;
   for (it = clients.begin(); it != clients.end(); it++) {
     stringstream s;
@@ -173,9 +175,22 @@ void CoServer4::broadcast(miMessage &msg)
       id = out.str();
     }
 
-    if (!(id == clientId))
-      it->second->sendMessage(msg);
+    if (!(id == clientId)) {
+      // Send only to same userId if possible
+      CoSocket* tclient = it->second;
+      LOG4CXX_DEBUG(logger, "userId: " << userId << " getUserId(): " << tclient->getUserId());
+      if (userId == 0 || tclient->getUserId() == 0 ||
+        userId == tclient->getUserId()) {
 
+        LOG4CXX_DEBUG(logger, "Broadcast to: " << clientId << endl << msg.content().c_str());
+
+        it->second->sendMessage(msg);
+      }
+      else {
+    	LOG4CXX_DEBUG(logger, "Ignored: " << userId << " " << tclient->getUserId());
+
+      }
+    }
   }
 }
 
@@ -211,14 +226,21 @@ void CoServer4::killClient(CoSocket *client)
 void CoServer4::serve(miMessage &msg, CoSocket *client)
 {
   if (msg.to == -1) {
+    int userId = 0;
     // broadcast message
     if (client != 0) {
-      msg.from = client->getId();
-    } else {
+	  msg.from = client->getId();
+	} else {
       msg.from = 0;
     }
+    cout << "serve - internal" << endl;
     internal(msg, client); ///< broadcast to server also
-    broadcast(msg);
+    if (client != 0) {
+      userId = client->getUserId();
+      cout << "serve - userId " << userId << endl;
+    }
+  	  cout << "serve - broadcast" << endl;
+    broadcast(msg, userId);
     LOG4CXX_DEBUG(logger, "Broadcast message relayed");
   } else if (msg.to == 0 && client != 0) {
     // message is addressed to server (not in use??)
@@ -231,7 +253,7 @@ void CoServer4::serve(miMessage &msg, CoSocket *client)
     } else {
       msg.from = 0;
     }
-
+    cout << "send to address" << endl;
     clients[msg.to]->sendMessage(msg);
     LOG4CXX_DEBUG(logger, "Direct message relayed");
 
@@ -257,6 +279,12 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
   if (msg.command == "SETTYPE") {
     // set type in list of clients
     client->setType(msg.data[0].cStr());
+    // set userId
+    if (msg.commondesc == "userId") {
+      int id = atoi(msg.common.cStr());
+      client->setUserId(id);
+	  LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
+    }
 
     ostringstream text;
     text << "New client is of type " << client->getType().c_str();
@@ -266,16 +294,18 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
     // broadcast the type of new connected client
     QString data;
     QTextStream s(&data, QIODevice::WriteOnly);
-    s << client->getId() << ':' << QString(client->getType().c_str());
+    s << client->getId() << ':' << QString(client->getType().c_str())
+    << ':' << client->getUserId();
 
     miMessage update;
     update.to = -1;
     update.from = 0;
     update.command = qmstrings::newclient;
-    update.commondesc = "id:type";
+    update.commondesc = "id:type:uid";
     update.common = (miString) data.toAscii().data();
-
-    serve(update);
+    cout << "serve 1" << endl;
+    broadcast(update, client->getUserId());
+   // serve(update);
 
     // sends the list of already connected clients to the new client
     if (clients.size() > 1) {
@@ -285,7 +315,10 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
 
         // do not send message to yourself
         if (!(tclient->getId() == client->getId())) {
-          QString data;
+        	// Or to other the my userId if not old clients possible
+        	if (client->getUserId() == 0 || tclient->getUserId() == 0 ||
+        		client->getUserId() == tclient->getUserId()) {
+        	QString data;
           QTextStream s(&data, QIODevice::WriteOnly);
           s << tclient->getId() << ':' << QString(tclient->getType().c_str());
 
@@ -295,8 +328,9 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
           update.command = qmstrings::newclient;
           update.commondesc = "id:type";
           update.common = (miString) data.toAscii().data();
-
+cout << "serve 2" << endl;
           serve(update);
+          }
         }
       }
     }
