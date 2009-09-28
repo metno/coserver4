@@ -49,7 +49,7 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
   id = 0;
   visualMode = vm;
   dynamicMode = dm;
-
+  
 #ifdef HAVE_LOG4CXX
   /// LOGGER
   miString logpro;
@@ -73,10 +73,10 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
 	  cout << "Started" << endl;
 	  #ifdef _DEBUG
 	  	cerr << "Started dynamic mode" << endl;
-	  #endif
+	  #endif	  
   }
-
-  listen(QHostAddress::Any, port);
+  
+  listen(QHostAddress::Any, port);  
 
 #ifdef HAVE_LOG4CXX
   if (isListening()) {
@@ -85,19 +85,19 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     LOG4CXX_ERROR(logger, "Failed to bind to port");
   }
 #endif
-
+  
   console = new CoConsole();
   if (visualMode) {
     console->show();
-  }
+  }  
 }
 /*
 int CoServer4::writePortToFile() {
 	miString homePath = miString(getenv("HOME"));
-
+	
 	if (homePath.length() > 0) {
 		FILE *pfile;
-		pfile = fopen(miString(homePath + "/.diana.port").cStr(), "w");
+		pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
 		if (pfile != NULL) {
 			cerr << "File created" << endl;
 			fputs(miString(miString(port) + "\n").cStr(), pfile);
@@ -105,7 +105,7 @@ int CoServer4::writePortToFile() {
 		} else {
 			cerr << "File NOT created" << endl;
 		}
-		return 0;
+		return 0;	
 	} else {
 		cerr << "Path to users HOME not found." << endl;
 		return 1;
@@ -119,20 +119,20 @@ int CoServer4::readPortFromFile(quint16& port) {
 	miString homePath = miString(getenv("HOME"));
 	FILE *pfile;
 	char fileContent[10];
-
-	pfile = fopen(miString(homePath + "/.diana.port").cStr(), "r");
+	
+	pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
 	if (pfile == NULL) {
 		cerr << "Error opening diana.port" << endl;
 		return 1;
-	} else {
+	} else {		
 		fgets(fileContent, 10, pfile);
 		puts(fileContent);
 		fclose(pfile);
 		port = miString(fileContent).toInt(0);
-
+		
 		cerr << "Port is set to: " << port << endl;
-	}
-	return 0;
+	}		
+	return 0;	
 }
 */
 void CoServer4::incomingConnection(int sock)

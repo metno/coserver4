@@ -86,6 +86,7 @@ bool portFromRange = false;
 	#endif	
     port = qmstrings::port;
   }
+
   if (cl.arg('L').size() > 0) {
 	  logfile = cl.arg('L')[0];
   } else {
