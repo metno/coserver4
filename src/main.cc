@@ -11,6 +11,9 @@
 #include <qUtilities/QLetterCommands.h>
 #include "CoServer4.h"
 
+using namespace std;
+using namespace miutil;
+
 int main(int argc, char *argv[])
 {
 	#ifdef _DEBUG	
