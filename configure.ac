@@ -33,9 +33,14 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
+METNO_PROG_PKG_CONFIG
+METNO_REQUIRE_QT4([ 
+	QtCore
+	QtGui
+	QtNetwork
+ ])
+METNO_REQUIRE_PKG([MILOGGER], [miLogger])
+METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])
 
-METNO_REQUIRE_QT4([ QtCore ])
-
-PKG_CHECK_MODULES([qUtilities],[qUtilities])
 
 AC_OUTPUT(Makefile src/Makefile)

@@ -15,10 +15,10 @@ coserver4_SOURCES =   \
 	$(qt_headers) \
 	$(qt_sources)
 
+coserver4_CPPFLAGS= -DNOLOG4CXX
+coserver4_CXXFLAGS=$(QT4_CPPFLAGS) $(QUTILITIES_CPPFLAGS) $(MILOGGER_CPPFLAGS)
+coserver4_LDFLAGS= $(QT4_LIBS) $(QUTILITIES_LIBS) $(MILOGGER_LIBS)
 
-coserver4_CXXFLAGS=$(QT4_CPPFLAGS) $(qUtilities_CPPFLAGS)
-coserver4_LDFLAGS= $(QT4_LIBS) $(qUtilities_LIBS)
-
-# This rule lets GNU make create any moc_*.cpp from the equivalent *.h
+# This lets GNU make create any moc_*.cpp from the equivalent *.h
 %_moc.cc: %.h
 	$(MOC4) $< -o $@
