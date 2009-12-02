@@ -9,6 +9,6 @@ Standards-Version: 3.7.2
 Package: coserver4
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Coserver4 diana-communication tools
+Description: Diana-communication tool
  This server is based on QSockets and connects Diana to
  other Qt-based applications
