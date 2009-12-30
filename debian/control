@@ -1,0 +1,14 @@
+Source: coserver4  
+Section: science
+Priority: extra
+Maintainer: Norwegian Meteorological Institute met.no <diana@met.no>
+Build-Depends: debhelper (>= 5), autotools-dev
+Build-Conflicts: autoconf2.13, automake1.4
+Standards-Version: 3.7.2
+
+Package: coserver4
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Diana-communication tool
+ This server is based on QSockets and connects Diana to
+ other Qt-based applications

@@ -1,0 +1,5 @@
+coserver4 (4.3.1ubuntu3) hardy; urgency=low
+
+  * Initial debian package
+
+ -- Juergen Schulze <juergens@met.no>  Mon, 12 Oct 2009 10:28:13 +0200

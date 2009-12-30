@@ -42,6 +42,9 @@
 #include <qUtilities/QLetterCommands.h>
 #include "CoServer4.h"
 
+using namespace miutil;
+using namespace std;
+
 CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     string logPropFilename) :
   QTcpServer()
