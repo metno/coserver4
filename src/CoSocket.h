@@ -56,6 +56,8 @@ protected:
 public:
 	void setId(int);
 	int getId(void);
+	void setUserId(int);
+	int getUserId(void);
 	void setType(string);
 	string getType(void);
 
@@ -74,6 +76,7 @@ public:
 	
 private:
 	int id;
+	quint32 userId;
 	quint32 blockSize;
 	string type;
 	

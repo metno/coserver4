@@ -1,7 +1,7 @@
 /**
  * coserver2
  * @author Martin Lilleeng Sætra <martinls@met.no>
- * 
+ *
  * $Id: CoSocket.cc,v 1.13 2007/09/04 11:00:40 martinls Exp $
  *
  * Copyright (C) 2007 met.no
@@ -22,7 +22,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -42,9 +42,10 @@ CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
 	logger = log4cxx::Logger::getLogger("coserver4.CoSocket"); ///< LOG4CXX init
 #endif
 	blockSize = 0;
-	    
+	userId = 0;
+
 	setSocketDescriptor(sock);
-	
+
 	connect(this, SIGNAL(readyRead()), SLOT(readNew()));
 	connect(this, SIGNAL(disconnected()), SLOT(connectionClosed()));
 }
@@ -55,6 +56,14 @@ void CoSocket::setId(int id) {
 
 int CoSocket::getId() {
 	return id;
+}
+
+void CoSocket::setUserId(int id) {
+	this->userId = id;
+}
+
+int CoSocket::getUserId() {
+	return userId;
 }
 
 void CoSocket::setType(string type) {
@@ -69,22 +78,22 @@ void CoSocket::readNew() {
 	CoServer4* server = (CoServer4*)parent();
 	QDataStream in(this);
 	in.setVersion(QDataStream::Qt_4_0);
-	
+
 	// make sure that the whole message has been written
 #ifdef _DEBUG
 	cout << "CoSocket::readNew: bytesAvailable(): " << bytesAvailable() << endl;
 #endif
-	
+
+
 	if (blockSize == 0) {
 		if (bytesAvailable() < (int)sizeof(quint32))
 			return;
-
 		in >> blockSize;
 	}
 
 	if (bytesAvailable() < blockSize)
 		return;
-	
+
 	// read incoming message
 	miMessage msg;
 	QString tmpcommand, tmpdescription, tmpcommondesc, tmpcommon,
@@ -105,29 +114,29 @@ void CoSocket::readNew() {
 		in >> tmpdata;
 		msg.data.push_back(tmpdata.toStdString());
 	}
-	
+
 #ifdef _DEBUG
 	cout << "miMessage in CoSocket::readNew() (RECV)" << endl;
 	cout << msg.content() << endl;
 #endif
-	
+
 	// process message
 	server->serve(msg, this);
-	
+
 	blockSize = 0;
-	
+
 	// more unread messages on socket?
 	if(bytesAvailable() > 0)
 		readNew();
 }
 
-void CoSocket::sendMessage(miMessage &msg) {	
+void CoSocket::sendMessage(miMessage &msg) {
 	if (state() == QTcpSocket::ConnectedState) {
-#ifdef _DEBUG	
+#ifdef _DEBUG
 		cout << "miMessage in CoSocket::sendMessage() (SEND)" << endl;
 		cout << msg.content() << endl;
 #endif
-		
+
 		QByteArray block;
 		QDataStream out(&block, QIODevice::WriteOnly);
 		out.setVersion(QDataStream::Qt_4_0);
@@ -146,7 +155,7 @@ void CoSocket::sendMessage(miMessage &msg) {
 		out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 		for (int i = 0; i < msg.data.size(); i++)
 			out << QString(msg.data[i].cStr());
-		
+
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
 

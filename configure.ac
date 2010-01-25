@@ -35,9 +35,9 @@ AC_TYPE_SIZE_T
 
 METNO_PROG_PKG_CONFIG
 METNO_REQUIRE_QT4([ 
-	QtCore
-	QtGui
-	QtNetwork
+	Core
+	Gui
+	Network
  ])
 METNO_REQUIRE_PKG([MILOGGER], [miLogger])
 METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])

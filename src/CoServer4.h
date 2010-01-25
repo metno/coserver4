@@ -79,7 +79,7 @@ private:
    * Broadcasts a message to all connected clients.
    * @param msg Message to broadcast
    */
-  void broadcast(miMessage &msg);
+  void broadcast(miMessage &msg, int userId = 0);
 
   /**
    * Handles new connecting clients.
