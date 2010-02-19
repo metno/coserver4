@@ -48,24 +48,24 @@ using namespace std;
 
 class CoConsole : public QDialog {
 	Q_OBJECT;
-	
+
 protected:
 #ifdef HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger;
 #endif
-	
+
 public:
 	/**
 	 * CoConsole.
 	 */
 	CoConsole();
-	
+
 	/**
 	 * Displays log message.
 	 * @param text The log message
 	 */
 	void log(const string &text);
-	
+
 private:
 	QTextEdit *textfield;
 	QTextCursor *cursor;

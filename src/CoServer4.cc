@@ -52,7 +52,7 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
   id = 0;
   visualMode = vm;
   dynamicMode = dm;
-  
+
 #ifdef HAVE_LOG4CXX
   /// LOGGER
   miString logpro;
@@ -73,13 +73,13 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
 #endif
 
   if (dynamicMode) {
-	  cout << "Started" << endl;
-	  #ifdef _DEBUG
-	  	cerr << "Started dynamic mode" << endl;
-	  #endif	  
+    cout << "Started" << endl;
+#ifdef _DEBUG
+    cerr << "Started dynamic mode" << endl;
+#endif
   }
-  
-  listen(QHostAddress::Any, port);  
+
+  listen(QHostAddress::Any, port);
 
 #ifdef HAVE_LOG4CXX
   if (isListening()) {
@@ -88,16 +88,16 @@ CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
     LOG4CXX_ERROR(logger, "Failed to bind to port");
   }
 #endif
-  
-  console = new CoConsole();
+
   if (visualMode) {
+    console = new CoConsole();
     console->show();
-  }  
+  }
 }
 /*
 int CoServer4::writePortToFile() {
 	miString homePath = miString(getenv("HOME"));
-	
+
 	if (homePath.length() > 0) {
 		FILE *pfile;
 		pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
@@ -108,7 +108,7 @@ int CoServer4::writePortToFile() {
 		} else {
 			cerr << "File NOT created" << endl;
 		}
-		return 0;	
+		return 0;
 	} else {
 		cerr << "Path to users HOME not found." << endl;
 		return 1;
@@ -122,20 +122,20 @@ int CoServer4::readPortFromFile(quint16& port) {
 	miString homePath = miString(getenv("HOME"));
 	FILE *pfile;
 	char fileContent[10];
-	
+
 	pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
 	if (pfile == NULL) {
 		cerr << "Error opening diana.port" << endl;
 		return 1;
-	} else {		
+	} else {
 		fgets(fileContent, 10, pfile);
 		puts(fileContent);
 		fclose(pfile);
 		port = miString(fileContent).toInt(0);
-		
+
 		cerr << "Port is set to: " << port << endl;
-	}		
-	return 0;	
+	}
+	return 0;
 }
 */
 void CoServer4::incomingConnection(int sock)
@@ -151,14 +151,15 @@ void CoServer4::incomingConnection(int sock)
   ostringstream text;
   text << "New client connected and assigned id " << id;
   LOG4CXX_INFO(logger, "New client connected and assigned id " << id);
-  console->log(text.str());
-
+  if (visualMode) {
+    console->log(text.str());
+  }
 #ifdef _DEBUG
   cout << "New total number of clients: " << (int) clients.size() << endl;
 #endif
 }
 
-void CoServer4::broadcast(miMessage &msg, int userId)
+void CoServer4::broadcast(miMessage &msg, string userId)
 {
 
   LOG4CXX_DEBUG(logger, "broadcast userId: " << userId << endl);
@@ -182,7 +183,7 @@ void CoServer4::broadcast(miMessage &msg, int userId)
       // Send only to same userId if possible
       CoSocket* tclient = it->second;
       LOG4CXX_DEBUG(logger, "userId: " << userId << " getUserId(): " << tclient->getUserId());
-      if (userId == 0 || tclient->getUserId() == 0 ||
+      if (userId == "" || tclient->getUserId() == "" ||
         userId == tclient->getUserId()) {
 
         LOG4CXX_DEBUG(logger, "Broadcast to: " << clientId << endl << msg.content().c_str());
@@ -216,8 +217,9 @@ void CoServer4::killClient(CoSocket *client)
   ostringstream text;
   text << "Client " << client->getId() << " disconnected";
   LOG4CXX_INFO(logger, "Client " << client->getId() << " disconnected");
-  console->log(text.str());
-
+  if (visualMode) {
+    console->log(text.str());
+  }
   // remove client from the list of clients
   clients.erase(client->getId());
 
@@ -229,7 +231,7 @@ void CoServer4::killClient(CoSocket *client)
 void CoServer4::serve(miMessage &msg, CoSocket *client)
 {
   if (msg.to == -1) {
-    int userId = 0;
+    string userId = "";
     // broadcast message
     if (client != 0) {
 	  msg.from = client->getId();
@@ -284,21 +286,21 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
     client->setType(msg.data[0].cStr());
     // set userId
     if (msg.commondesc == "userId") {
-      int id = atoi(msg.common.cStr());
-      client->setUserId(id);
-	  LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
+      client->setUserId(msg.common.cStr());
+      LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
     }
 
     ostringstream text;
     text << "New client is of type " << client->getType().c_str();
     LOG4CXX_INFO(logger, "New client is of type " << client->getType().c_str());
-    console->log(text.str());
-
+    if (visualMode) {
+      console->log(text.str());
+    }
     // broadcast the type of new connected client
     QString data;
     QTextStream s(&data, QIODevice::WriteOnly);
     s << client->getId() << ':' << QString(client->getType().c_str())
-    << ':' << client->getUserId();
+      << ':' << client->getUserId().c_str();
 
     miMessage update;
     update.to = -1;
@@ -319,7 +321,7 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
         // do not send message to yourself
         if (!(tclient->getId() == client->getId())) {
         	// Or to other the my userId if not old clients possible
-        	if (client->getUserId() == 0 || tclient->getUserId() == 0 ||
+        	if (client->getUserId() == "" || tclient->getUserId() == "" ||
         		client->getUserId() == tclient->getUserId()) {
         	QString data;
           QTextStream s(&data, QIODevice::WriteOnly);

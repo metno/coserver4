@@ -42,7 +42,7 @@ CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
 	logger = log4cxx::Logger::getLogger("coserver4.CoSocket"); ///< LOG4CXX init
 #endif
 	blockSize = 0;
-	userId = 0;
+	userId = "";
 
 	setSocketDescriptor(sock);
 
@@ -58,11 +58,11 @@ int CoSocket::getId() {
 	return id;
 }
 
-void CoSocket::setUserId(int id) {
+void CoSocket::setUserId(string id) {
 	this->userId = id;
 }
 
-int CoSocket::getUserId() {
+string CoSocket::getUserId() {
 	return userId;
 }
 

@@ -47,17 +47,17 @@ using namespace std;
 
 class CoSocket : public QTcpSocket {
 	Q_OBJECT
-	
+
 protected:
 #ifdef HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger;
 #endif
-	
+
 public:
 	void setId(int);
 	int getId(void);
-	void setUserId(int);
-	int getUserId(void);
+	void setUserId(string);
+	string getUserId(void);
 	void setType(string);
 	string getType(void);
 
@@ -67,25 +67,25 @@ public:
 	 * @param parent Parent object
 	 */
 	CoSocket(int sock, QObject *parent);
-	
+
 	/**
 	 * Sends message to client.
 	 * @param msg The message
 	 */
 	void sendMessage(miMessage &msg);
-	
+
 private:
 	int id;
-	quint32 userId;
+	string userId;
 	quint32 blockSize;
 	string type;
-	
+
 private slots:
 	/**
 	 * Read new incoming message.
 	 */
 	void readNew();
-	
+
 	/**
 	 * Called when socket is disconnected.
 	 */
