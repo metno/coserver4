@@ -10,7 +10,7 @@ AC_PREREQ(2.59)
 AC_INIT(src/main.cc)
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE(coserver4, 4.3.1)
+AM_INIT_AUTOMAKE(coserver4, 4.3.2)
 AC_CONFIG_HEADER([config.h])
 
 AC_PROG_CC
