@@ -1,11 +1,5 @@
-coserver4 (4.3.2ubuntu4) lucid; urgency=low
+coserver4 (4.3.2-ubuntu1) lucid; urgency=low
 
-  * First Lucid version
+  * Fixing dependencies
 
- -- Audun D. Christoffersen <audun.christoffersen@met.no>  Wed, 15 Sep 2010 12:48:16 +0200
-
-coserver4 (4.3.1ubuntu3) hardy; urgency=low
-
-  * Initial debian package
-
- -- Juergen Schulze <juergens@met.no>  Mon, 12 Oct 2009 10:28:13 +0200
+ -- Lisbeth Bergholt <lisbethb@eurus10.met.no>  Mon, 18 Oct 2010 13:56:47 +0200
