@@ -103,16 +103,16 @@ void CoSocket::readNew() {
 	in >> msg.to;
 	// server-side socket knows the id
 	msg.from = id;
-	in >> tmpcommand; msg.command = tmpcommand.toStdString();
-	in >> tmpdescription; msg.description = tmpdescription.toStdString();
-	in >> tmpcommondesc; msg.commondesc = tmpcommondesc.toStdString();
-	in >> tmpcommon; msg.common = tmpcommon.toStdString();
-	in >> tmpclientType; msg.clientType = tmpclientType.toStdString();
-	in >> tmpco; msg.co = tmpco.toStdString();
+        in >> tmpcommand; msg.command = tmpcommand.toLatin1().constData();
+        in >> tmpdescription; msg.description = tmpdescription.toLatin1().constData();
+        in >> tmpcommondesc; msg.commondesc = tmpcommondesc.toLatin1().constData();
+        in >> tmpcommon; msg.common = tmpcommon.toLatin1().constData();
+        in >> tmpclientType; msg.clientType = tmpclientType.toLatin1().constData();
+        in >> tmpco; msg.co = tmpco.toLatin1().constData();
 	in >> size; // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 	for (int i = 0; i < size; i++) {
 		in >> tmpdata;
-		msg.data.push_back(tmpdata.toStdString());
+                msg.data.push_back(tmpdata.toLatin1().constData());
 	}
 
 #ifdef _DEBUG
@@ -146,15 +146,15 @@ void CoSocket::sendMessage(miMessage &msg) {
 
 		out << msg.to;
 		out << msg.from;
-		out << QString(msg.command.cStr());
-		out << QString(msg.description.cStr());
-		out << QString(msg.commondesc.cStr());
-		out << QString(msg.common.cStr());
-		out << QString(msg.clientType.cStr());
-		out << QString(msg.co.cStr());
+                out << msg.command;
+                out << msg.description;
+                out << msg.commondesc;
+                out << msg.common;
+                out << msg.clientType;
+                out << msg.co;
 		out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 		for (int i = 0; i < msg.data.size(); i++)
-			out << QString(msg.data[i].cStr());
+                        out << msg.data[i];
 
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));

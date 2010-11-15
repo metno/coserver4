@@ -37,12 +37,15 @@
 #include <qapplication.h>
 
 #include <iostream>
+#include <sstream>
+#include <ostream>
+
 #include <stdlib.h>
 
 #include <qUtilities/QLetterCommands.h>
 #include "CoServer4.h"
 
-using namespace miutil;
+//using namespace miutil;
 using namespace std;
 
 CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
@@ -165,14 +168,14 @@ void CoServer4::broadcast(miMessage &msg, string userId)
   LOG4CXX_DEBUG(logger, "broadcast userId: " << userId << endl);
   map<int, CoSocket*>::iterator it;
   for (it = clients.begin(); it != clients.end(); it++) {
-    stringstream s;
+    ostringstream s;
     s << it->first; ///< find current id for iterator element
     string clientId(s.str());
     string id;
 
     // do not send message back to sender
     if (msg.commondesc == "id:type") {
-      id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
+        id = (msg.common.split(":", QString::SkipEmptyParts)).at(0).toLatin1().constData();
     } else {
       stringstream out;
       out << msg.from;
@@ -210,7 +213,7 @@ void CoServer4::killClient(CoSocket *client)
   update.from = 0;
   update.command = qmstrings::removeclient;
   update.commondesc = "id:type";
-  update.common = (miString) data.toAscii().data();
+  update.common = data;
 
   serve(update);
 
@@ -263,7 +266,7 @@ void CoServer4::serve(miMessage &msg, CoSocket *client)
     LOG4CXX_DEBUG(logger, "Direct message relayed");
 
     if (visualMode && msg.from) {
-      cerr << msg.content();
+      cerr << msg.content().toLatin1().constData();
     }
   }
 }
@@ -283,14 +286,14 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
 {
   if (msg.command == "SETTYPE") {
     // set type in list of clients
-    client->setType(msg.data[0].cStr());
+    client->setType(msg.data[0].toLatin1().constData());
     // set userId
     if (msg.commondesc == "userId") {
-      client->setUserId(msg.common.cStr());
+      client->setUserId(msg.common.toLatin1().constData());
       LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
     }
 
-    ostringstream text;
+    std::ostringstream text;
     text << "New client is of type " << client->getType().c_str();
     LOG4CXX_INFO(logger, "New client is of type " << client->getType().c_str());
     if (visualMode) {
@@ -307,7 +310,7 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
     update.from = 0;
     update.command = qmstrings::newclient;
     update.commondesc = "id:type:uid";
-    update.common = (miString) data.toAscii().data();
+    update.common = data.toAscii().data();
     cout << "serve 1" << endl;
     broadcast(update, client->getUserId());
    // serve(update);
@@ -332,7 +335,7 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
           update.from = 0;
           update.command = qmstrings::newclient;
           update.commondesc = "id:type";
-          update.common = (miString) data.toAscii().data();
+          update.common = data.toAscii().data();
 cout << "serve 2" << endl;
           serve(update);
           }
