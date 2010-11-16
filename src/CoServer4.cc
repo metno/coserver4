@@ -175,7 +175,7 @@ void CoServer4::broadcast(miMessage &msg, string userId)
 
     // do not send message back to sender
     if (msg.commondesc == "id:type") {
-        id = (msg.common.split(":", QString::SkipEmptyParts)).at(0).toLatin1().constData();
+      id = (msg.common.split(":", QString::SkipEmptyParts)).at(0).cStr();
     } else {
       stringstream out;
       out << msg.from;
@@ -213,7 +213,7 @@ void CoServer4::killClient(CoSocket *client)
   update.from = 0;
   update.command = qmstrings::removeclient;
   update.commondesc = "id:type";
-  update.common = data;
+  update.common = data.toStdString();
 
   serve(update);
 
@@ -266,7 +266,7 @@ void CoServer4::serve(miMessage &msg, CoSocket *client)
     LOG4CXX_DEBUG(logger, "Direct message relayed");
 
     if (visualMode && msg.from) {
-      cerr << msg.content().toLatin1().constData();
+      cerr << msg.content().cStr();
     }
   }
 }
@@ -286,10 +286,10 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
 {
   if (msg.command == "SETTYPE") {
     // set type in list of clients
-    client->setType(msg.data[0].toLatin1().constData());
+    client->setType(msg.data[0].cStr());
     // set userId
     if (msg.commondesc == "userId") {
-      client->setUserId(msg.common.toLatin1().constData());
+      client->setUserId(msg.common.cStr());
       LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
     }
 

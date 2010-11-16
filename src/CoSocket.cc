@@ -37,6 +37,8 @@
 #include <CoSocket.h>
 #include <CoServer4.h>
 
+using namespace miutil;
+
 CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
 #ifdef HAVE_LOG4CXX
 	logger = log4cxx::Logger::getLogger("coserver4.CoSocket"); ///< LOG4CXX init
@@ -144,17 +146,17 @@ void CoSocket::sendMessage(miMessage &msg) {
 		// send message to server
 		out << (quint32)0;
 
-		out << msg.to;
-		out << msg.from;
-                out << msg.command;
-                out << msg.description;
-                out << msg.commondesc;
-                out << msg.common;
-                out << msg.clientType;
-                out << msg.co;
+		out << miString(msg.to).cStr();
+		out << miString(msg.from).cStr();
+                out << msg.command.cStr();
+                out << msg.description.cStr();
+                out << msg.commondesc.cStr();
+                out << msg.common.cStr();
+                out << msg.clientType.cStr();
+                out << msg.co.cStr();
 		out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 		for (int i = 0; i < msg.data.size(); i++)
-                        out << msg.data[i];
+		  out << msg.data[i].cStr();
 
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
