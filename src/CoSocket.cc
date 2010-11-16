@@ -105,16 +105,16 @@ void CoSocket::readNew() {
 	in >> msg.to;
 	// server-side socket knows the id
 	msg.from = id;
-        in >> tmpcommand; msg.command = tmpcommand.toLatin1().constData();
-        in >> tmpdescription; msg.description = tmpdescription.toLatin1().constData();
-        in >> tmpcommondesc; msg.commondesc = tmpcommondesc.toLatin1().constData();
-        in >> tmpcommon; msg.common = tmpcommon.toLatin1().constData();
-        in >> tmpclientType; msg.clientType = tmpclientType.toLatin1().constData();
-        in >> tmpco; msg.co = tmpco.toLatin1().constData();
+	in >> tmpcommand; msg.command = tmpcommand.toStdString();
+	in >> tmpdescription; msg.description = tmpdescription.toStdString();
+	in >> tmpcommondesc; msg.commondesc = tmpcommondesc.toStdString();
+	in >> tmpcommon; msg.common = tmpcommon.toStdString();
+	in >> tmpclientType; msg.clientType = tmpclientType.toStdString();
+	in >> tmpco; msg.co = tmpco.toStdString();
 	in >> size; // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
 	for (int i = 0; i < size; i++) {
 		in >> tmpdata;
-                msg.data.push_back(tmpdata.toLatin1().constData());
+		msg.data.push_back(tmpdata.toStdString());
 	}
 
 #ifdef _DEBUG
