@@ -33,6 +33,7 @@
 // Qt-includes
 #include <QTcpSocket>
 #include <QTcpServer>
+#include <QMutex>
 
 #include <vector>
 #include <map>
@@ -63,6 +64,7 @@ private:
   map<int, CoSocket*> clients;
   CoConsole *console;
   quint16 port;
+  QMutex mutex;
 
   /**
    * Internal helper function. Sets type of new connecting client,
@@ -117,6 +119,10 @@ public:
   bool ready(void);
   
   //int readPortFromFile(quint16& port);
+
+  private slots:
+    void connectionClosed(int id);
+    void serve(miMessage &mi, int id);
     
 };
 

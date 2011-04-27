@@ -34,6 +34,7 @@
 // Qt-includes
 #include <QtNetwork>
 #include <QTextStream>
+#include <QMutexLocker>
 #include <qapplication.h>
 
 #include <iostream>
@@ -46,298 +47,345 @@ using namespace miutil;
 using namespace std;
 
 CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
-    string logPropFilename) :
-  QTcpServer()
+                     string logPropFilename) :
+    QTcpServer()
+  //, mutex(QMutex::Recursive)
 {
-  id = 0;
-  visualMode = vm;
-  dynamicMode = dm;
+    id = 0;
+    visualMode = vm;
+    dynamicMode = dm;
 
 #ifdef HAVE_LOG4CXX
-  /// LOGGER
-  miString logpro;
-  if (logPropFile) {
-    logpro = logPropFilename;
-  }
+    /// LOGGER
+    miString logpro;
+    if (logPropFile) {
+        logpro = logPropFilename;
+    }
 #endif
 
 #ifdef HAVE_LOG4CXX
-  if ( logpro.exists() ) {
-    log4cxx::PropertyConfigurator::configure(logpro.c_str());
-  } else {
-    log4cxx::BasicConfigurator::configure();
-    log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getWarn());
-  }
+    if ( logpro.exists() ) {
+        log4cxx::PropertyConfigurator::configure(logpro.c_str());
+    } else {
+        log4cxx::BasicConfigurator::configure();
+        log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getWarn());
+    }
 
-  logger = log4cxx::Logger::getLogger("coserver4.CoServer4");
+    logger = log4cxx::Logger::getLogger("coserver4.CoServer4");
 #endif
 
-  if (dynamicMode) {
-    cout << "Started" << endl;
+    if (dynamicMode) {
+        cout << "Started" << endl;
 #ifdef _DEBUG
-    cerr << "Started dynamic mode" << endl;
+        cerr << "Started dynamic mode" << endl;
 #endif
-  }
+    }
 
-  listen(QHostAddress::Any, port);
+    listen(QHostAddress::Any, port);
 
 #ifdef HAVE_LOG4CXX
-  if (isListening()) {
-    LOG4CXX_INFO(logger, "coserver4 listening on port " << port);
-  } else {
-    LOG4CXX_ERROR(logger, "Failed to bind to port");
-  }
+    if (isListening()) {
+        LOG4CXX_INFO(logger, "coserver4 listening on port " << port);
+    } else {
+        LOG4CXX_ERROR(logger, "Failed to bind to port");
+    }
 #endif
 
-  if (visualMode) {
-    console = new CoConsole();
-    console->show();
-  }
+    if (visualMode) {
+        console = new CoConsole();
+        console->show();
+    }
 }
 /*
 int CoServer4::writePortToFile() {
-	miString homePath = miString(getenv("HOME"));
+ miString homePath = miString(getenv("HOME"));
 
-	if (homePath.length() > 0) {
-		FILE *pfile;
-		pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
-		if (pfile != NULL) {
-			cerr << "File created" << endl;
-			fputs(miString(miString(port) + "\n").cStr(), pfile);
-			fclose(pfile);
-		} else {
-			cerr << "File NOT created" << endl;
-		}
-		return 0;
-	} else {
-		cerr << "Path to users HOME not found." << endl;
-		return 1;
-	}
+ if (homePath.length() > 0) {
+  FILE *pfile;
+  pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
+  if (pfile != NULL) {
+   cerr << "File created" << endl;
+   fputs(miString(miString(port) + "\n").cStr(), pfile);
+   fclose(pfile);
+  } else {
+   cerr << "File NOT created" << endl;
+  }
+  return 0;
+ } else {
+  cerr << "Path to users HOME not found." << endl;
+  return 1;
+ }
 
-	return 0;
+ return 0;
 }
 */
 /*
 int CoServer4::readPortFromFile(quint16& port) {
-	miString homePath = miString(getenv("HOME"));
-	FILE *pfile;
-	char fileContent[10];
+ miString homePath = miString(getenv("HOME"));
+ FILE *pfile;
+ char fileContent[10];
 
-	pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
-	if (pfile == NULL) {
-		cerr << "Error opening diana.port" << endl;
-		return 1;
-	} else {
-		fgets(fileContent, 10, pfile);
-		puts(fileContent);
-		fclose(pfile);
-		port = miString(fileContent).toInt(0);
+ pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
+ if (pfile == NULL) {
+  cerr << "Error opening diana.port" << endl;
+  return 1;
+ } else {
+  fgets(fileContent, 10, pfile);
+  puts(fileContent);
+  fclose(pfile);
+  port = miString(fileContent).toInt(0);
 
-		cerr << "Port is set to: " << port << endl;
-	}
-	return 0;
+  cerr << "Port is set to: " << port << endl;
+ }
+ return 0;
 }
 */
 void CoServer4::incomingConnection(int sock)
 {
-  // fetch incoming connection (socket)
-  CoSocket *client = new CoSocket(sock, this);
+    // fetch incoming connection (socket)
+    mutex.lock();
+    CoSocket *client = new CoSocket(sock, this);
 
-  // add to list of clients
-  int id = newId();
-  client->setId(id);
-  clients[id] = client;
+    // add to list of clients
+    int id = newId();
+    client->setId(id);
+    clients[id] = client;
+    mutex.unlock();
 
-  ostringstream text;
-  text << "New client connected and assigned id " << id;
-  LOG4CXX_INFO(logger, "New client connected and assigned id " << id);
-  if (visualMode) {
-    console->log(text.str());
-  }
+    connect(client, SIGNAL(connectionClosed(int)), SLOT(connectionClosed(int)));
+    connect(client, SIGNAL(newMessage(miMessage&,int)), SLOT(serve(miMessage&,int)));
+
+    ostringstream text;
+    text << "New client connected and assigned id " << id;
+    LOG4CXX_INFO(logger, "New client connected and assigned id " << id);
+    if (visualMode) {
+        console->log(text.str());
+    }
 #ifdef _DEBUG
-  cout << "New total number of clients: " << (int) clients.size() << endl;
+    cout << "New total number of clients: " << (int) clients.size() << endl;
 #endif
 }
 
 void CoServer4::broadcast(miMessage &msg, string userId)
 {
 
-  LOG4CXX_DEBUG(logger, "broadcast userId: " << userId << endl);
-  map<int, CoSocket*>::iterator it;
-  for (it = clients.begin(); it != clients.end(); it++) {
-    stringstream s;
-    s << it->first; ///< find current id for iterator element
-    string clientId(s.str());
-    string id;
+    LOG4CXX_DEBUG(logger, "broadcast userId: " << userId << endl);
+    cerr << "-> broadcast userId: " << userId << endl;
+   // mutex.lock();
+    map<int, CoSocket*>::iterator it;
+    for (it = clients.begin(); it != clients.end(); it++) {
+        stringstream s;
+        s << it->first; ///< find current id for iterator element
+        string clientId(s.str());
+        string id;
+        cerr << "--> broadcast userId: " << clientId << endl;
 
-    // do not send message back to sender
-    if (msg.commondesc == "id:type") {
-      id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
-    } else {
-      stringstream out;
-      out << msg.from;
-      id = out.str();
+        // do not send message back to sender
+        if (msg.commondesc == "id:type") {
+            id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
+        } else {
+            stringstream out;
+            out << msg.from;
+            id = out.str();
+        }
+
+        if (!(id == clientId)) {
+            // Send only to same userId if possible
+            CoSocket* tclient = it->second;
+            LOG4CXX_DEBUG(logger, "userId: " << userId << " getUserId(): " << tclient->getUserId());
+            if (userId == "" || tclient->getUserId() == "" ||
+                    userId == tclient->getUserId()) {
+
+                LOG4CXX_DEBUG(logger, "Broadcast to: " << clientId << endl << msg.content().c_str());
+
+                it->second->sendMessage(msg);
+            }
+            else {
+                LOG4CXX_DEBUG(logger, "Ignored: " << userId << " " << tclient->getUserId());
+
+            }
+        }
     }
+    //mutex.unlock();
+    cerr << "<- broadcast userId: " << userId << endl;
+}
 
-    if (!(id == clientId)) {
-      // Send only to same userId if possible
-      CoSocket* tclient = it->second;
-      LOG4CXX_DEBUG(logger, "userId: " << userId << " getUserId(): " << tclient->getUserId());
-      if (userId == "" || tclient->getUserId() == "" ||
-        userId == tclient->getUserId()) {
-
-        LOG4CXX_DEBUG(logger, "Broadcast to: " << clientId << endl << msg.content().c_str());
-
-        it->second->sendMessage(msg);
-      }
-      else {
-    	LOG4CXX_DEBUG(logger, "Ignored: " << userId << " " << tclient->getUserId());
-
-      }
+void CoServer4::connectionClosed(int id)
+{
+    cerr << "-> connectionClosed"<< endl;
+    mutex.lock();
+    cerr << "--> connectionClosed"<< endl;
+    if (clients.find(id) != clients.end()) {
+        killClient(clients[id]);
     }
-  }
+    mutex.unlock();
+    cerr << "<- connectionClosed"<< endl;
 }
 
 void CoServer4::killClient(CoSocket *client)
 {
-  // tell the other connected clients of the disconnecting client
-  QString data;
-  QTextStream s(&data, QIODevice::WriteOnly);
-  s << client->getId() << ':' << QString(client->getType().c_str());
+    cerr << "CoServer4::killClient(CoSocket *client)" << endl;
+    // remove client from the list of clients
+    clients.erase(client->getId());
+    client->deleteLater();
 
-  miMessage update;
-  update.to = -1;
-  update.from = 0;
-  update.command = qmstrings::removeclient;
-  update.commondesc = "id:type";
-  update.common = (miString) data.toAscii().data();
+    // tell the other connected clients of the disconnecting client
+    QString data;
+    QTextStream s(&data, QIODevice::WriteOnly);
+    s << client->getId() << ':' << QString(client->getType().c_str());
 
-  serve(update);
+    miMessage update;
+    update.to = -1;
+    update.from = 0;
+    update.command = qmstrings::removeclient;
+    update.commondesc = "id:type";
+    update.common = (miString) data.toAscii().data();
 
-  ostringstream text;
-  text << "Client " << client->getId() << " disconnected";
-  LOG4CXX_INFO(logger, "Client " << client->getId() << " disconnected");
-  if (visualMode) {
-    console->log(text.str());
-  }
-  // remove client from the list of clients
-  clients.erase(client->getId());
+    serve(update);
 
-  // exit if no more clients are connected
-  if (dynamicMode && clients.size() <= 0)
-    QApplication::exit(1);
+    ostringstream text;
+    text << "Client " << client->getId() << " disconnected";
+    LOG4CXX_INFO(logger, "Client " << client->getId() << " disconnected");
+    if (visualMode) {
+        console->log(text.str());
+    }
+
+    // exit if no more clients are connected
+    if (dynamicMode && clients.size() <= 0)
+        QApplication::exit(1);
 }
+
+void CoServer4::serve(miMessage &msg, int id)
+{
+    //cerr << "CoServer4::serve(miMessage &msg, int id)" << endl;
+    cerr << "-> serve(miMessage &msg, int id) " << id << endl;
+    mutex.lock();
+    cerr << "--> serve(miMessage &msg, int id)" << endl;
+    if (clients.find(id) != clients.end()) {
+        serve(msg, clients[id]);
+    }
+    mutex.unlock();
+    cerr << "<- serve(miMessage &msg, int id)" << endl;
+}
+
+/**
+  Mutex is lock outside
+  */
 
 void CoServer4::serve(miMessage &msg, CoSocket *client)
 {
-  if (msg.to == -1) {
-    string userId = "";
-    // broadcast message
-    if (client != 0) {
-	  msg.from = client->getId();
+    if (msg.to == -1) {
+        string userId = "";
+        // broadcast message
+        if (client != 0) {
+            msg.from = client->getId();
 	} else {
-      msg.from = 0;
-    }
-    cout << "serve - internal" << endl;
-    internal(msg, client); ///< broadcast to server also
-    if (client != 0) {
-      userId = client->getUserId();
-      cout << "serve - userId " << userId << endl;
-    }
-  	  cout << "serve - broadcast" << endl;
-    broadcast(msg, userId);
-    LOG4CXX_DEBUG(logger, "Broadcast message relayed");
-  } else if (msg.to == 0 && client != 0) {
-    // message is addressed to server (not in use??)
-    internal(msg, client);
-    LOG4CXX_DEBUG(logger, "Server message received");
-  } else {
-    // send message to the addressed client
-    if (client != 0) {
-      msg.from = client->getId();
+            msg.from = 0;
+        }
+        cout << "serve - internal" << endl;
+        internal(msg, client); ///< broadcast to server also
+        if (client != 0) {
+            userId = client->getUserId();
+            cout << "serve - userId " << userId << endl;
+        }
+        cout << "serve - broadcast" << endl;
+        broadcast(msg, userId);
+        LOG4CXX_DEBUG(logger, "Broadcast message relayed");
+    } else if (msg.to == 0 && client != 0) {
+        // message is addressed to server (not in use??)
+        internal(msg, client);
+        LOG4CXX_DEBUG(logger, "Server message received");
     } else {
-      msg.from = 0;
-    }
-    cout << "send to address" << endl;
-    clients[msg.to]->sendMessage(msg);
-    LOG4CXX_DEBUG(logger, "Direct message relayed");
+        // send message to the addressed client
+        if (client != 0) {
+            msg.from = client->getId();
+        } else {
+            msg.from = 0;
+        }
+        cout << "send to address" << endl;
+        if (clients.find(msg.to) != clients.end()) {
+            clients[msg.to]->sendMessage(msg);
+            LOG4CXX_DEBUG(logger, "Direct message relayed");
+        }
 
-    if (visualMode && msg.from) {
-      cerr << msg.content().cStr();
+        if (visualMode && msg.from) {
+            cerr << msg.content().cStr();
+        }
     }
-  }
 }
 
 int CoServer4::newId()
 {
-  return ++id;
+    return ++id;
 }
 
 bool CoServer4::ready()
 {
-  return isListening();
+    return isListening();
 }
 
 
 void CoServer4::internal(miMessage &msg, CoSocket *client)
 {
-  if (msg.command == "SETTYPE") {
-    // set type in list of clients
-    client->setType(msg.data[0].cStr());
-    // set userId
-    if (msg.commondesc == "userId") {
-      client->setUserId(msg.common.cStr());
-      LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
-    }
-
-    ostringstream text;
-    text << "New client is of type " << client->getType().c_str();
-    LOG4CXX_INFO(logger, "New client is of type " << client->getType().c_str());
-    if (visualMode) {
-      console->log(text.str());
-    }
-    // broadcast the type of new connected client
-    QString data;
-    QTextStream s(&data, QIODevice::WriteOnly);
-    s << client->getId() << ':' << QString(client->getType().c_str())
-      << ':' << client->getUserId().c_str();
-
-    miMessage update;
-    update.to = -1;
-    update.from = 0;
-    update.command = qmstrings::newclient;
-    update.commondesc = "id:type:uid";
-    update.common = (miString) data.toAscii().data();
-    cout << "serve 1" << endl;
-    broadcast(update, client->getUserId());
-   // serve(update);
-
-    // sends the list of already connected clients to the new client
-    if (clients.size() > 1) {
-      map<int, CoSocket*>::iterator it;
-      for (it = clients.begin(); it != clients.end(); it++) {
-        CoSocket *tclient = it->second;
-
-        // do not send message to yourself
-        if (!(tclient->getId() == client->getId())) {
-        	// Or to other the my userId if not old clients possible
-        	if (client->getUserId() == "" || tclient->getUserId() == "" ||
-        		client->getUserId() == tclient->getUserId()) {
-        	QString data;
-          QTextStream s(&data, QIODevice::WriteOnly);
-          s << tclient->getId() << ':' << QString(tclient->getType().c_str());
-
-          miMessage update;
-          update.to = client->getId();
-          update.from = 0;
-          update.command = qmstrings::newclient;
-          update.commondesc = "id:type";
-          update.common = (miString) data.toAscii().data();
-cout << "serve 2" << endl;
-          serve(update);
-          }
+    if (msg.command == "SETTYPE") {
+        // set type in list of clients
+        client->setType(msg.data[0].cStr());
+        // set userId
+        if (msg.commondesc == "userId") {
+            client->setUserId(msg.common.cStr());
+            LOG4CXX_INFO(logger, "New client from user: " << client->getUserId());
         }
-      }
+
+        ostringstream text;
+        text << "New client is of type " << client->getType().c_str();
+        LOG4CXX_INFO(logger, "New client is of type " << client->getType().c_str());
+        if (visualMode) {
+            console->log(text.str());
+        }
+        // broadcast the type of new connected client
+        QString data;
+        QTextStream s(&data, QIODevice::WriteOnly);
+        s << client->getId() << ':' << QString(client->getType().c_str())
+          << ':' << client->getUserId().c_str();
+
+        miMessage update;
+        update.to = -1;
+        update.from = 0;
+        update.command = qmstrings::newclient;
+        update.commondesc = "id:type:uid";
+        update.common = (miString) data.toAscii().data();
+        cout << "serve 1" << endl;
+        broadcast(update, client->getUserId());
+        // serve(update);
+
+        // sends the list of already connected clients to the new client
+        if (clients.size() > 1) {
+            //QMutexLocker l(&mutex);
+
+            map<int, CoSocket*>::iterator it;
+            for (it = clients.begin(); it != clients.end(); it++) {
+                CoSocket *tclient = it->second;
+
+                // do not send message to yourself
+                if (!(tclient->getId() == client->getId())) {
+                    // Or to other the my userId if not old clients possible
+                    if (client->getUserId() == "" || tclient->getUserId() == "" ||
+                            client->getUserId() == tclient->getUserId()) {
+                        QString data;
+                        QTextStream s(&data, QIODevice::WriteOnly);
+                        s << tclient->getId() << ':' << QString(tclient->getType().c_str());
+
+                        miMessage update;
+                        update.to = client->getId();
+                        update.from = 0;
+                        update.command = qmstrings::newclient;
+                        update.commondesc = "id:type";
+                        update.common = (miString) data.toAscii().data();
+                        cout << "serve 2" << endl;
+                        serve(update);
+                    }
+                }
+            }
+        }
     }
-  }
 }

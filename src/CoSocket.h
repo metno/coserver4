@@ -54,12 +54,13 @@ protected:
 #endif
 
 public:
-	void setId(int);
+        void setId(int);
 	int getId(void);
 	void setUserId(string);
 	string getUserId(void);
 	void setType(string);
 	string getType(void);
+        bool isClosed();
 
 	/**
 	 * CoSocket.
@@ -67,6 +68,7 @@ public:
 	 * @param parent Parent object
 	 */
 	CoSocket(int sock, QObject *parent);
+        ~CoSocket();
 
 	/**
 	 * Sends message to client.
@@ -79,6 +81,7 @@ private:
 	string userId;
 	quint32 blockSize;
 	string type;
+        volatile bool closed;
 
 private slots:
 	/**
@@ -90,6 +93,10 @@ private slots:
 	 * Called when socket is disconnected.
 	 */
 	void connectionClosed();
+        void aboutToClose();
+signals:
+        void connectionClosed(int id);
+        void newMessage(miMessage &msg, int id);
 };
 
 #endif

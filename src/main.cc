@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <puTools/miCommandLine.h>
 #include <qUtilities/QLetterCommands.h>
+#include <miLogger/logger.h>
+#include <miLogger/LogHandler.h>
 #include "CoServer4.h"
 
 using namespace std;
@@ -99,11 +101,24 @@ bool portFromRange = false;
 #endif
 
   string logPropFilename;
+  miString logfilename;
   if (cl.hasFlag('L') && cl.arg('L').size() > 0) {
     cerr << "Has L" << endl;
     istringstream os((cl.arg('L'))[0]);
     os >> logPropFilename;
+    logfilename =(cl.arg('L'))[0];
   }
+  // Fix logger
+    // initLogHandler must always be done
+    if (logfilename.exists()) {
+      milogger::LogHandler::initLogHandler(logfilename);
+    }
+    else {
+      milogger::LogHandler::initLogHandler( 4, "");
+    }
+    MI_LOG & log = MI_LOG::getInstance("coserver.main");
+
+
   QCoreApplication* app;
 
   if (cl.hasFlag('v')) {

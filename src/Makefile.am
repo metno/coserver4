@@ -21,6 +21,17 @@ coserver4_LDFLAGS= $(QT4_LDFLAGS)  $(QUTILITIES_LDFLAGS)  $(MILOGGER_LDFLAGS)
 coserver4_LDADD=   $(QT4_LIBS)     $(QUTILITIES_LIBS)     $(MILOGGER_LIBS)
 
 
+check_PROGRAMS = \
+	simDiana
+
+simDiana_SOURCES = tester.cc DianaSim.cc
+simDiana_CXXFLAGS= $(QT4_CPPFLAGS) $(QUTILITIES_CPPFLAGS) $(MILOGGER_CPPFLAGS)
+simDiana_LDFLAGS = $(QT4_LDFLAGS)  $(QUTILITIES_LDFLAGS)  $(MILOGGER_LDFLAGS)
+simDiana_LDADD   = $(QT4_LIBS)     $(QUTILITIES_LIBS)     $(MILOGGER_LIBS)
+
+TESTS = ${check_PROGRAMS}
+
+
 # This lets GNU make create any moc_*.cpp from the equivalent *.h
 %_moc.cc: %.h
 	$(MOC4) $< -o $@
