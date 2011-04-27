@@ -100,7 +100,7 @@ public:
    * @param logPropFilename The log4cxx properties file
    */
   CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
-      string logPropFilename = "");
+      miutil::miString logPropFilename = "");
     
   /**
    * Process incoming message.

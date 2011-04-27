@@ -35,68 +35,60 @@
 // Qt-includes
 #include <QTcpSocket>
 
-#ifdef HAVE_LOG4CXX
-#include <log4cxx/logger.h>
-#else
-#include <miLogger/logger.h>
-#endif
-
 #include <qUtilities/miMessage.h>
 
 using namespace std;
 
-class CoSocket : public QTcpSocket {
-	Q_OBJECT
-
-protected:
-#ifdef HAVE_LOG4CXX
-	log4cxx::LoggerPtr logger;
-#endif
+class CoSocket : public QTcpSocket
+{
+    Q_OBJECT
 
 public:
-        void setId(int);
-	int getId(void);
-	void setUserId(string);
-	string getUserId(void);
-	void setType(string);
-	string getType(void);
-        bool isClosed();
+    void setId(int);
+    int getId(void);
+    void setUserId(string);
+    string getUserId(void);
+    void setType(string);
+    string getType(void);
+    bool isClosed();
 
-	/**
-	 * CoSocket.
-	 * @param sock The socketdescriptor
-	 * @param parent Parent object
-	 */
-	CoSocket(int sock, QObject *parent);
-        ~CoSocket();
+    /**
+  * CoSocket.
+  * @param sock The socketdescriptor
+  * @param parent Parent object
+  */
+    CoSocket(int sock, QObject *parent);
+    ~CoSocket();
 
-	/**
-	 * Sends message to client.
-	 * @param msg The message
-	 */
-	void sendMessage(miMessage &msg);
+    /**
+  * Sends message to client.
+  * @param msg The message
+  */
+    void sendMessage(miMessage &msg);
 
 private:
-	int id;
-	string userId;
-	quint32 blockSize;
-	string type;
-        volatile bool closed;
+    int id;
+    string userId;
+    quint32 blockSize;
+    string type;
+    volatile bool closed;
 
 private slots:
-	/**
-	 * Read new incoming message.
-	 */
-	void readNew();
+    /**
+  * Read new incoming message.
+  */
+    void readNew();
 
-	/**
-	 * Called when socket is disconnected.
-	 */
-	void connectionClosed();
-        void aboutToClose();
+    /**
+  * Called when socket is disconnected.
+  */
+    void connectionClosed();
+    void aboutToClose();
+    void socketError(QAbstractSocket::SocketError e);
+
 signals:
-        void connectionClosed(int id);
-        void newMessage(miMessage &msg, int id);
+    void connectionClosed(int id);
+    void newMessage(miMessage &msg, int id);
 };
 
 #endif

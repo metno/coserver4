@@ -35,13 +35,17 @@
 #include <iostream>
 
 #include <CoSocket.h>
+#include <miLogger/LogHandler.h>
+
+#define PKG "coserver4.CoSocket"
 
 using namespace miutil;
 
-CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
-#ifdef HAVE_LOG4CXX
-    logger = log4cxx::Logger::getLogger("coserver4.CoSocket"); ///< LOG4CXX init
-#endif
+CoSocket::CoSocket(int sock, QObject *parent)
+    : QTcpSocket(parent)
+{
+    MI_LOG & log = MI_LOG::getInstance(PKG".CoSocket");
+
     blockSize = 0;
     userId = "";
     closed = false;
@@ -50,6 +54,9 @@ CoSocket::CoSocket(int sock, QObject *parent) : QTcpSocket(parent) {
     connect(this, SIGNAL(readyRead()), SLOT(readNew()));
     connect(this, SIGNAL(disconnected()), SLOT(connectionClosed()));
     connect(this, SIGNAL(aboutToClose()), SLOT(aboutToClose()));
+    // socket error
+    connect(this, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+
 }
 
 CoSocket::~CoSocket()
@@ -82,15 +89,12 @@ string CoSocket::getType(void) {
 }
 
 void CoSocket::readNew() {
-    //CoServer4* server = (CoServer4*)parent();
+    MI_LOG & log = MI_LOG::getInstance(PKG".readNew");
     QDataStream in(this);
     in.setVersion(QDataStream::Qt_4_0);
 
     // make sure that the whole message has been written
-#ifdef _DEBUG
-    cout << "CoSocket::readNew: bytesAvailable(): " << bytesAvailable() << endl;
-#endif
-
+    log.debugStream() << "bytesAvailable(): " << bytesAvailable();
 
     if (blockSize == 0) {
         if (bytesAvailable() < (int)sizeof(quint32))
@@ -128,10 +132,8 @@ void CoSocket::readNew() {
         msg.data.push_back(tmpdata.toStdString());
     }
 
-#ifdef _DEBUG
-    cout << "miMessage in CoSocket::readNew() (RECV)" << endl;
-    cout << msg.content() << endl;
-#endif
+    log.debugStream() << "miMessage in CoSocket::readNew() (RECV)";
+    log.debugStream() << msg.content();
 
     // process message
     //server->serve(msg, this);
@@ -151,14 +153,11 @@ bool CoSocket::isClosed()
 }
 
 void CoSocket::sendMessage(miMessage &msg) {
-    cout << "miMessage in CoSocket::sendMessage() (SEND)" << getId() << endl;
-    //cout << msg.content() << endl;
+    MI_LOG & log = MI_LOG::getInstance(PKG".sendMessage");
 
     if (state() == QTcpSocket::ConnectedState && !closed) {
-#ifdef _DEBUG
-        cout << "miMessage in CoSocket::sendMessage() (SEND)" << getId() << endl;
-        cout << msg.content() << endl;
-#endif
+        log.debugStream() << "miMessage in CoSocket::sendMessage() (SEND)" << getId();
+        log.debugStream() << msg.content();
 
         QByteArray block;
         QDataStream out(&block, QIODevice::WriteOnly);
@@ -182,26 +181,34 @@ void CoSocket::sendMessage(miMessage &msg) {
         out.device()->seek(0);
         out << (quint32)(block.size() - sizeof(quint32));
 
-        cerr << "Before write " << this->isClosed() << endl;
         write(block);
-       // waitForBytesWritten(1000);
+        // waitForBytesWritten(1000);
 
         //flush();
     } else {
-        LOG4CXX_ERROR(logger, "Error sending message");
+        log.errorStream() << "Error sending message state: " << state() << " closed: " << closed;
     }
+}
+
+void CoSocket::socketError(QAbstractSocket::SocketError e)
+{
+    MI_LOG & log = MI_LOG::getInstance(PKG".socketError");
+
+    if ( QAbstractSocket::RemoteHostClosedError == e ) {
+        log.info("CoClient unexpected shutdown or crash");
+    }
+    else
+        log.infoStream() << "Error when contacting coserver: " << e;
 }
 
 void CoSocket::aboutToClose()
 {
-    cerr << "about to close" << getId() << endl;
+    //cerr << "about to close" << getId() << endl;
     closed = true;
-
 }
 
 void CoSocket::connectionClosed() {
-    cerr <<  "connectionClosed " << getId() << endl;
-    //CoServer4* server = (CoServer4*)parent();
+    //cerr <<  "connectionClosed " << getId() << endl;
     closed = true;
     emit connectionClosed(getId());
 }

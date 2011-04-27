@@ -3,15 +3,15 @@
 #-----------------------------------------------------------------------------
 
 AC_PREREQ(2.59)
+AC_INIT([coserver4], [4.3.2], [diana@met.no])
+AC_CANONICAL_TARGET
+AC_CONFIG_HEADER([config.h])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE
 
 #-----------------------------------------------------------------------------
 # Programs
 #-----------------------------------------------------------------------------
-AC_INIT(src/main.cc)
-AC_CONFIG_MACRO_DIR([m4])
-
-AM_INIT_AUTOMAKE(coserver4, 4.3.2)
-AC_CONFIG_HEADER([config.h])
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -34,7 +34,7 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 METNO_PROG_PKG_CONFIG
-METNO_REQUIRE_QT4([ 
+METNO_REQUIRE_QT4([
 	Core
 	Gui
 	Network
