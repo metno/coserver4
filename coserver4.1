@@ -1,0 +1,34 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH COSERVER4 1 "February 11, 2013"
+.SH NAME
+coserver4 \- connect Diana and client programs
+.SH SYNOPSIS
+.B coserver4
+[-d] [-v] [-p
+.I port
+] [-L
+.I log4cxx-properties-file
+]
+.SH DESCRIPTION
+coserver4 is a daemon that allows connecting diana and client programs.
+
+.B -d
+enables dynamic mode, i.e., the daemon exits when the last client
+disconnects.
+
+.B -v
+enables visual mode, i.e., communication is displayed in a GUI.
+
+.B -p
+.I port
+sets the port number to listen at.
+
+.B -L
+.I log4cxx-properties-file
+allows configuring the logging output.
+
+.SH SEE ALSO
+.BR diana (1)
+.PP
+This manual page was written by Alexander B\(:urger
+<alexander.buerger@met.no> in February 2013.

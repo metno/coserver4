@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------------------
 
 AC_PREREQ(2.59)
-AC_INIT([coserver4], [4.3.2], [diana@met.no])
+AC_INIT([coserver4], [4.3.3], [diana@met.no])
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])

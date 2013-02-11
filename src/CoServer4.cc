@@ -46,11 +46,10 @@
 
 #define PKG "coserver4.CoServer4"
 
-using namespace miutil;
 using namespace std;
 
 CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
-                     miString logPropFilename) :
+                     const std::string& logPropFilename) :
     QTcpServer()
 {
     id = 0;
@@ -160,7 +159,7 @@ void CoServer4::broadcast(miMessage &msg, string userId)
 
         // do not send message back to sender
         if (msg.commondesc == "id:type") {
-            id = (msg.common.split(":"))[0]; ///< extract id from the message to be broadcast
+            id = msg.common.substr(0, msg.common.find(':')); ///< extract id from the message to be broadcast
         } else {
             stringstream out;
             out << msg.from;
@@ -214,7 +213,7 @@ void CoServer4::killClient(CoSocket *client)
     update.from = 0;
     update.command = qmstrings::removeclient;
     update.commondesc = "id:type";
-    update.common = (miString) data.toAscii().data();
+    update.common = data.toAscii().data();
 
     serve(update);
 
@@ -279,7 +278,7 @@ void CoServer4::serve(miMessage &msg, CoSocket *client)
         }
 
         if (visualMode && msg.from) {
-            cerr << msg.content().cStr();
+            cerr << msg.content().c_str();
         }
     }
 }
@@ -300,10 +299,10 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
     MI_LOG & log = MI_LOG::getInstance(PKG".internal");
     if (msg.command == "SETTYPE") {
         // set type in list of clients
-        client->setType(msg.data[0].cStr());
+        client->setType(msg.data[0].c_str());
         // set userId
         if (msg.commondesc == "userId") {
-            client->setUserId(msg.common.cStr());
+            client->setUserId(msg.common.c_str());
             log.infoStream() << "New client from user: " << client->getUserId();
         }
 
@@ -324,7 +323,7 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
         update.from = 0;
         update.command = qmstrings::newclient;
         update.commondesc = "id:type:uid";
-        update.common = (miString) data.toAscii().data();
+        update.common = data.toAscii().data();
         log.debug("broadcast");
         broadcast(update, client->getUserId());
         // serve(update);
@@ -350,7 +349,7 @@ void CoServer4::internal(miMessage &msg, CoSocket *client)
                         update.from = 0;
                         update.command = qmstrings::newclient;
                         update.commondesc = "id:type";
-                        update.common = (miString) data.toAscii().data();
+                        update.common = data.toAscii().data();
                         log.debug("serve");
                         serve(update);
                     }

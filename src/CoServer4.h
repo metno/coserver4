@@ -1,9 +1,8 @@
+// -*- c++ -*-
 /** @mainpage coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
  *
- * $Id: CoServer4.h,v 1.9 2007/09/04 10:34:45 martinls Exp $
- *
- * Copyright (C) 2007 met.no
+ * Copyright (C) 2013 met.no
  *
  * Contact information:
  * Norwegian Meteorological Institute
@@ -50,8 +49,6 @@
 #include "CoSocket.h"
 #include "CoConsole.h"
 
-using namespace std;
-
 class CoServer4: public QTcpServer {
 Q_OBJECT
 
@@ -61,7 +58,7 @@ protected:
 #endif
 
 private:
-  map<int, CoSocket*> clients;
+  std::map<int, CoSocket*> clients;
   CoConsole *console;
   quint16 port;
   QMutex mutex;
@@ -100,7 +97,7 @@ public:
    * @param logPropFilename The log4cxx properties file
    */
   CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
-      miutil::miString logPropFilename = "");
+      const std::string& logPropFilename = "");
     
   /**
    * Process incoming message.
@@ -120,7 +117,7 @@ public:
   
   //int readPortFromFile(quint16& port);
 
-  private slots:
+private Q_SLOTS:
     void connectionClosed(int id);
     void serve(miMessage &mi, int id);
     

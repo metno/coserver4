@@ -39,8 +39,6 @@
 
 #define PKG "coserver4.CoSocket"
 
-using namespace miutil;
-
 CoSocket::CoSocket(int sock, QObject *parent)
     : QTcpSocket(parent)
 {
@@ -168,15 +166,15 @@ void CoSocket::sendMessage(miMessage &msg) {
 
         out << msg.to;
         out << msg.from;
-        out << QString(msg.command.cStr());
-        out << QString(msg.description.cStr());
-        out << QString(msg.commondesc.cStr());
-        out << QString(msg.common.cStr());
-        out << QString(msg.clientType.cStr());
-        out << QString(msg.co.cStr());
+        out << QString(msg.command.c_str());
+        out << QString(msg.description.c_str());
+        out << QString(msg.commondesc.c_str());
+        out << QString(msg.common.c_str());
+        out << QString(msg.clientType.c_str());
+        out << QString(msg.co.c_str());
         out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
         for (int i = 0; i < msg.data.size(); i++)
-            out << QString(msg.data[i].cStr());
+            out << QString(msg.data[i].c_str());
 
         out.device()->seek(0);
         out << (quint32)(block.size() - sizeof(quint32));
