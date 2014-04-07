@@ -7,8 +7,16 @@
 // Qt-includes
 #include <QApplication>
 #include <stdlib.h>
+#include <string>
+#ifdef COSERVER
+#include "miCommandLineStd.h"
+#include <puTools/miStringFunctions.h>
+#include <coserver/QLetterCommands.h>
+#else
 #include <puTools/miCommandLine.h>
+#include <puTools/miString.h>
 #include <qUtilities/QLetterCommands.h>
+#endif
 #include <miLogger/LogHandler.h>
 #include "CoServer4.h"
 
@@ -30,8 +38,12 @@ int main(int argc, char *argv[])
 #endif
 
     // parsing commandline-arguments
-    vector<miCommandLine::option> opt(5);
-    miString logfile;
+#ifdef COSERVER
+  vector<miCommandLineStd::option> opt(5);
+#else
+  vector<miCommandLine::option> opt(5);
+#endif
+    std::string logfile;
     CoServer4 *server;
 
     /*
@@ -59,7 +71,11 @@ bool portFromRange = false;
     opt[3].alias = "log4cxx-properties-file";
     opt[3].hasArg = true;
 
-    miCommandLine cl(opt, argc, argv);
+#ifdef COSERVER
+  miCommandLineStd cl(opt, argc, argv);
+#else
+  miCommandLine cl(opt, argc, argv);
+#endif
 
     quint16 port;
     quint16 fileport;
@@ -70,7 +86,11 @@ bool portFromRange = false;
         //os >> port;
 
         if (cl.arg('p').size() >= 0) {
-            port = miString(cl.arg('p')[0]).toInt(0);
+#ifdef COSERVER
+	  port = miutil::to_int(cl.arg('p')[0]);
+#else
+      port = miutil::miString(cl.arg('p')[0]).toInt(0);
+#endif
         } else {
 #ifdef _DEBUG
             cerr << "cl.arg('p').size() == 0" << cl.arg('p').size() << endl;
@@ -99,7 +119,7 @@ bool portFromRange = false;
     cerr << "Port is really set to: " << port << endl;
 #endif
 
-    miString logfilename="";
+    std::string logfilename="";
     if (cl.hasFlag('L') && cl.arg('L').size() > 0) {
         cerr << "Has L" << endl;
         logfilename =(cl.arg('L'))[0];
@@ -107,7 +127,7 @@ bool portFromRange = false;
     // Fix logger
     // initLogHandler must always be done
 
-    if (logfilename.exists()) {
+    if (!logfilename.empty()) {
         milogger::LogHandler::initLogHandler(logfilename);
     }
     else {

@@ -44,8 +44,11 @@
 #else
 #include <miLogger/logger.h>
 #endif
-
+#ifdef COSERVER
+#include <coserver/miMessage.h>
+#else
 #include <qUtilities/miMessage.h>
+#endif
 #include "CoSocket.h"
 #include "CoConsole.h"
 

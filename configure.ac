@@ -40,7 +40,20 @@ METNO_REQUIRE_QT4([
 	Network
  ])
 METNO_REQUIRE_PKG([MILOGGER], [miLogger])
+METNO_REQUIRE_PKG([PUTOOLS], [puTools])
 METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])
+
+#
+# Features
+#
+METNO_WITH_LIBRARY([COSERVER], [coserver], [coserver library], [no])
+METNO_IF_WITH([coserver],  
+[
+   METNO_REQUIRE_PKG([COSERVER], [coserver])
+])
+METNO_WITH_CONDITIONAL([COSERVER], [coserver])
+
+
 
 
 AC_OUTPUT(Makefile src/Makefile)

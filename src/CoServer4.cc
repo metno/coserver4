@@ -40,7 +40,11 @@
 #include <iostream>
 #include <stdlib.h>
 
+#ifdef COSERVER
+#include <coserver/QLetterCommands.h>
+#else
 #include <qUtilities/QLetterCommands.h>
+#endif
 #include "CoServer4.h"
 #include <miLogger/LogHandler.h>
 

@@ -35,7 +35,11 @@
 // Qt-includes
 #include <QTcpSocket>
 
+#ifdef COSERVER
+#include <coserver/miMessage.h>
+#else
 #include <qUtilities/miMessage.h>
+#endif
 
 using namespace std;
 
