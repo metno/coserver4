@@ -4,21 +4,20 @@
  * @author Martin Lilleeng Sætra <martinls@met.no>
  */
 
-// Qt-includes
-#include <QApplication>
-#include <stdlib.h>
-#include <string>
-#ifdef COSERVER
+#include "CoServer4.h"
 #include "miCommandLineStd.h"
+
+#include <QApplication>
+#include <QUrl>
+
+#include <cstdlib>
+#include <string>
+
 #include <puTools/miStringFunctions.h>
 #include <coserver/QLetterCommands.h>
-#else
-#include <puTools/miCommandLine.h>
-#include <puTools/miString.h>
-#include <qUtilities/QLetterCommands.h>
-#endif
-#include <miLogger/LogHandler.h>
-#include "CoServer4.h"
+
+#define MILOGGER_CATEGORY "coserver4.main"
+#include <miLogger/miLogging.h>
 
 using namespace std;
 using namespace miutil;
@@ -38,13 +37,8 @@ int main(int argc, char *argv[])
 #endif
 
     // parsing commandline-arguments
-#ifdef COSERVER
-  vector<miCommandLineStd::option> opt(5);
-#else
-  vector<miCommandLine::option> opt(5);
-#endif
+    vector<miCommandLineStd::option> opt(5);
     std::string logfile;
-    CoServer4 *server;
 
     /*
   // TODO: Put these in configfile
@@ -59,92 +53,38 @@ bool portFromRange = false;
     opt[0].alias = "dynamic";
     opt[0].hasArg = false;
 
-    opt[1].flag = 'v';
-    opt[1].alias = "visual";
-    opt[1].hasArg = false;
-
-    opt[2].flag = 'p';
-    opt[2].alias = "port";
+    opt[2].flag = 'u';
+    opt[2].alias = "url";
     opt[2].hasArg = true;
 
     opt[3].flag = 'L';
     opt[3].alias = "log4cxx-properties-file";
     opt[3].hasArg = true;
 
-#ifdef COSERVER
-  miCommandLineStd cl(opt, argc, argv);
-#else
-  miCommandLine cl(opt, argc, argv);
-#endif
+    miCommandLineStd cl(opt, argc, argv);
 
-    quint16 port;
-    quint16 fileport;
-
-    if (cl.hasFlag('p')) {
-        cerr << "P flag sent" << endl;
-        //istringstream os((cl.arg('p'))[0]);
-        //os >> port;
-
-        if (cl.arg('p').size() >= 0) {
-#ifdef COSERVER
-	  port = miutil::to_int(cl.arg('p')[0]);
-#else
-      port = miutil::miString(cl.arg('p')[0]).toInt(0);
-#endif
-        } else {
-#ifdef _DEBUG
-            cerr << "cl.arg('p').size() == 0" << cl.arg('p').size() << endl;
-#endif
-            port = qmstrings::port;
-        }
-        /*  } else if (server->readPortFromFile(fileport) == 0) {
-   cerr << "Port read from file: " << fileport << endl;
-   port = fileport;
-  //} else if (portFromRange == false) {
-   */
+    QUrl url;
+    if (cl.hasFlag('u') && cl.arg('u').size() >= 0) {
+        url.setUrl(QString::fromStdString(cl.arg('u')[0]));
     } else {
-#ifdef _DEBUG
-        cerr << "Flag p not set!!!"  << endl;
-#endif
-        port = qmstrings::port;
+        url.setScheme("co4");
+        url.setHost("localhost");
+        url.setPort(qmstrings::port);
     }
 
-    if (cl.arg('L').size() > 0) {
-        logfile = cl.arg('L')[0];
-    } else {
-        logfile = "";
-    }
-
-#ifdef _DEBUG
-    cerr << "Port is really set to: " << port << endl;
-#endif
-
-    std::string logfilename="";
+    std::auto_ptr<milogger::LoggingConfig> log4cpp;
     if (cl.hasFlag('L') && cl.arg('L').size() > 0) {
-        cerr << "Has L" << endl;
-        logfilename =(cl.arg('L'))[0];
-    }
-    // Fix logger
-    // initLogHandler must always be done
-
-    if (!logfilename.empty()) {
-        milogger::LogHandler::initLogHandler(logfilename);
-    }
-    else {
-        milogger::LogHandler::initLogHandler( 2, "");
-    }
-
-    QCoreApplication* app;
-
-    if (cl.hasFlag('v')) {
-        app = new QApplication(argc, argv);
+        log4cpp.reset(new milogger::LoggingConfig((cl.arg('L'))[0]));
     } else {
-        app = new QCoreApplication(argc, argv);
+        log4cpp.reset(new milogger::LoggingConfig(""));
     }
-    server = new CoServer4(port, cl.hasFlag('d'), cl.hasFlag('v'), cl.hasFlag('L'), logfilename);
 
+    bool dynamic = cl.hasFlag('d');
+
+    QCoreApplication app(argc, argv);
+    CoServer4 *server = new CoServer4(url, dynamic);
     if (!server->ready())
         exit(1);
 
-    return app->exec();
+    return app.exec();
 }

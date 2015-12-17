@@ -1,3 +1,16 @@
+coserver4 (5.0.0-1) unstable; urgency=low
+
+  * use new metlibs/coserver library
+  * handle peer lists
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Thu, 17 Dec 2015 09:00:09 +0100
+
+coserver4 (4.4.0-1) unstable; urgency=low
+
+  * do not broadcast without userid
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Mon, 30 Nov 2015 09:00:09 +0100
+
 coserver4 (4.3.3-1) unstable; urgency=low
 
   * compile with new metlibs

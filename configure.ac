@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------------------
 
 AC_PREREQ(2.59)
-AC_INIT([coserver4], [4.3.3], [diana@met.no])
+AC_INIT([coserver4], [5.0.0], [diana@met.no])
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -43,18 +43,8 @@ METNO_REQUIRE_QT4([
 METNO_REQUIRE_PKG([MILOGGER], [miLogger])
 METNO_REQUIRE_PKG([PUTOOLS], [puTools])
 METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])
+METNO_REQUIRE_PKG([COSERVER], [coserver])
 
-#
-# Features
-#
-METNO_WITH_LIBRARY([COSERVER], [coserver], [coserver library], [no])
-METNO_IF_WITH([coserver],  
-[
-   METNO_REQUIRE_PKG([COSERVER], [coserver])
-])
-METNO_WITH_CONDITIONAL([COSERVER], [coserver])
+GTEST_CHECK([test/gtest])
 
-
-
-
-AC_OUTPUT(Makefile src/Makefile)
+AC_OUTPUT(Makefile src/Makefile test/Makefile test/gtest/Makefile)

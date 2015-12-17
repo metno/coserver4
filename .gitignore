@@ -1,5 +1,4 @@
 /m4/
-/mk/
 /Makefile
 /Makefile.in
 /aclocal.m4
@@ -28,3 +27,8 @@
 /src/coserver4-*.o
 /stamp-h1
 /debian/coserver4.substvars
+/compile
+/test-driver
+/test/gtest/Makefile.in
+/test/Makefile.in
+/m4

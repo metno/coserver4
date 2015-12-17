@@ -2,9 +2,7 @@
  * coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
  *
- * $Id: CoServer4.cc,v 1.22 2007/09/04 11:00:40 martinls Exp $
- *
- * Copyright (C) 2007 met.no
+ * Copyright (C) 2007-2015 met.no
  *
  * Contact information:
  * Norwegian Meteorological Institute
@@ -31,334 +29,413 @@
 // TODO: Add support for multiple servers active on different ports (on the same node)
 // TODO: Add support for multiple clients per server
 
-// Qt-includes
-#include <QtNetwork>
-#include <QTextStream>
-#include <QMutexLocker>
-#include <qapplication.h>
-
-#include <iostream>
-#include <stdlib.h>
-
-#ifdef COSERVER
-#include <coserver/QLetterCommands.h>
-#else
-#include <qUtilities/QLetterCommands.h>
-#endif
 #include "CoServer4.h"
-#include <miLogger/LogHandler.h>
 
-#define PKG "coserver4.CoServer4"
+#include <coserver/miMessage.h>
+#include <coserver/QLetterCommands.h>
+
+#include <QCoreApplication>
+#include <QFile>
+#include <QUrl>
+
+#include <cstdlib>
+
+#define MILOGGER_CATEGORY "coserver4.CoServer4"
+#include <qUtilities/miLoggingQt.h>
 
 using namespace std;
 
-CoServer4::CoServer4(quint16 port, bool dm, bool vm, bool logPropFile,
-                     const std::string& logPropFilename) :
-    QTcpServer()
+namespace {
+
+void addRegisteredClient(miQMessage& reg, CoSocket* c)
 {
-    id = 0;
-    visualMode = vm;
-    dynamicMode = dm;
+    if (!c)
+        return;
 
-    MI_LOG & log = MI_LOG::getInstance(PKG".CoServer4");
+    if (reg.countDataColumns() < 3)
+        reg.addDataDesc("id").addDataDesc("type").addDataDesc("name");
 
-    if (dynamicMode) {
-        log.debugStream() << "Started dynamic mode";
+    reg.addDataValues(QStringList()
+            << QString::number(c->id())
+            << c->getType()
+            << c->getName());
+}
+
+} // namespace
+
+CoServer4::CoServer4(const QUrl& url, bool dm)
+    : nextId(0)
+    , dynamicMode(dm)
+    , tcpServer(0)
+    , localServer(0)
+{
+    METLIBS_LOG_SCOPE(LOGVAL(dynamicMode));
+
+    if (url.scheme() == "co4") {
+        tcpServer = new QTcpServer(this);
+        tcpServer->listen(QHostAddress::Any, url.port());
+        connect(tcpServer, SIGNAL(newConnection()),
+                SLOT(onNewConnection()));
+    } else if (url.scheme() == "local") {
+        const QString path = url.path();
+        QFile socket(path);
+        if (socket.exists()) {
+            METLIBS_LOG_INFO("socket '" << path << "' exists, trying to remove");
+            if (!socket.remove()) {
+                METLIBS_LOG_ERROR("failed to remove coserver4 file '" << path << "'");
+            }
+        }
+        localServer = new QLocalServer(this);
+        localServer->listen(url.path());
+        connect(localServer, SIGNAL(newConnection()),
+                SLOT(onNewConnection()));
     }
 
-    listen(QHostAddress::Any, port);
-
-    if (isListening()) {
-        log.infoStream() << "coserver4 listening on port " << port;
+    if (ready()) {
+        METLIBS_LOG_INFO("coserver4 listening");
     } else {
-        log.errorStream() << "Failed to bind to port";
-    }
-
-    if (visualMode) {
-        console = new CoConsole();
-        console->show();
+        METLIBS_LOG_ERROR("failed to start coserver4");
     }
 }
-/*
-int CoServer4::writePortToFile() {
- miString homePath = miString(getenv("HOME"));
 
- if (homePath.length() > 0) {
-  FILE *pfile;
-  pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "w");
-  if (pfile != NULL) {
-   cerr << "File created" << endl;
-   fputs(miString(miString(port) + "\n").cStr(), pfile);
-   fclose(pfile);
-  } else {
-   cerr << "File NOT created" << endl;
-  }
-  return 0;
- } else {
-  cerr << "Path to users HOME not found." << endl;
-  return 1;
- }
-
- return 0;
-}
-*/
-/*
-int CoServer4::readPortFromFile(quint16& port) {
- miString homePath = miString(getenv("HOME"));
- FILE *pfile;
- char fileContent[10];
-
- pfile = fopen(miString(homePath + "/.coserver.port").cStr(), "r");
- if (pfile == NULL) {
-  cerr << "Error opening diana.port" << endl;
-  return 1;
- } else {
-  fgets(fileContent, 10, pfile);
-  puts(fileContent);
-  fclose(pfile);
-  port = miString(fileContent).toInt(0);
-
-  cerr << "Port is set to: " << port << endl;
- }
- return 0;
-}
-*/
-void CoServer4::incomingConnection(int sock)
+void CoServer4::onNewConnection()
 {
-    MI_LOG & log = MI_LOG::getInstance(PKG".incomingConnection");
-    // fetch incoming connection (socket)
-    mutex.lock();
-    CoSocket *client = new CoSocket(sock, this);
+    METLIBS_LOG_SCOPE();
 
-    // add to list of clients
-    int id = newId();
-    client->setId(id);
-    clients[id] = client;
-    mutex.unlock();
-
-    connect(client, SIGNAL(connectionClosed(int)), SLOT(connectionClosed(int)));
-    connect(client, SIGNAL(newMessage(miMessage&,int)), SLOT(serve(miMessage&,int)));
-
-    ostringstream text;
-    text << "New client connected and assigned id " << id;
-    log.infoStream() << "New client connected and assigned id " << id;
-    if (visualMode) {
-        console->log(text.str());
+    const int id = generateId();
+    CoSocket *client = new CoSocket(id, this);
+    if (tcpServer) {
+        QTcpSocket* tcp = tcpServer->nextPendingConnection();
+        client->setSocket(tcp);
+    } else if (localServer) {
+        QLocalSocket* local = localServer->nextPendingConnection();
+        client->setSocket(local);
     }
-    log.debugStream() << "New total number of clients: " << (int) clients.size();
+    clients[client->id()] = client;
+
+    connect(client, SIGNAL(connectionClosed(CoSocket*)),
+            SLOT(onClientConnectionClosed(CoSocket*)));
+    connect(client, SIGNAL(receivedMessage(CoSocket*, const ClientIds&, const miQMessage&)),
+            SLOT(onClientReceivedMessage(CoSocket*, const ClientIds&, const miQMessage&)));
+
+    METLIBS_LOG_INFO("New client connected and assigned id " << id);
+    METLIBS_LOG_DEBUG("New total number of clients: " << clients.size());
 }
 
-void CoServer4::broadcast(miMessage &msg, string userId)
+void CoServer4::broadcastFromClient(CoSocket* sender, const ClientIds& toIds, const miQMessage &qmsg)
 {
-    MI_LOG & log = MI_LOG::getInstance(PKG".broadcast");
-
-    log.debugStream() << "broadcast userId: " << userId;
-
-    map<int, CoSocket*>::iterator it;
-    for (it = clients.begin(); it != clients.end(); it++) {
-        stringstream s;
-        s << it->first; ///< find current id for iterator element
-        string clientId(s.str());
-        string id;
-
-        // do not send message back to sender
-        if (msg.commondesc == "id:type") {
-            id = msg.common.substr(0, msg.common.find(':')); ///< extract id from the message to be broadcast
+    METLIBS_LOG_SCOPE();
+    METLIBS_LOG_DEBUG(LOGVAL(sender->id()) << LOGVAL(toIds.size()) << LOGVAL(qmsg.command()));
+    for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
+        CoSocket* c = it->second;
+        if (c == sender)
+            continue;
+        if (!toIds.empty() && toIds.count(c->id()) == 0) {
+            METLIBS_LOG_DEBUG(LOGVAL(c->id()) <<  LOGVAL(toIds.empty()) << LOGVAL(toIds.count(c->id())));
+            continue;
+        }
+        if (sender->isPeer(c)) {
+            c->sendMessage(sender->id(), qmsg);
         } else {
-            stringstream out;
-            out << msg.from;
-            id = out.str();
-        }
-
-        if (!(id == clientId)) {
-            // Send only to same userId if possible
-            CoSocket* tclient = it->second;
-            log.debugStream() << "userId: " << userId << " getUserId(): " << tclient->getUserId();
-            if (userId == "" || tclient->getUserId() == "" ||
-                    userId == tclient->getUserId()) {
-
-                log.debugStream() << "Broadcast to: " << clientId;
-                log.debugStream() << msg.content().c_str();
-
-                it->second->sendMessage(msg);
-            }
-            else {
-                log.debugStream() << "Ignored: " << userId << " " << tclient->getUserId();
-            }
+            METLIBS_LOG_DEBUG("not a peer: " << LOGVAL(c->id()));
         }
     }
 }
 
-void CoServer4::connectionClosed(int id)
+void CoServer4::onClientConnectionClosed(CoSocket* client)
 {
-    mutex.lock();
-    if (clients.find(id) != clients.end()) {
-        killClient(clients[id]);
-    }
-    mutex.unlock();
-}
+    METLIBS_LOG_SCOPE();
 
-void CoServer4::killClient(CoSocket *client)
-{
-    MI_LOG & log = MI_LOG::getInstance(PKG".killClient");
-
-    log.debugStream() << "remove client: " << client->getId();
-    // remove client from the list of clients
-    clients.erase(client->getId());
-    client->deleteLater();
+    clients.erase(client->id());
 
     // tell the other connected clients of the disconnecting client
-    QString data;
-    QTextStream s(&data, QIODevice::WriteOnly);
-    s << client->getId() << ':' << QString(client->getType().c_str());
-
-    miMessage update;
-    update.to = -1;
-    update.from = 0;
-    update.command = qmstrings::removeclient;
-    update.commondesc = "id:type";
-    update.common = data.toAscii().data();
-
-    serve(update);
-
-    ostringstream text;
-    text << "Client " << client->getId() << " disconnected";
-    log.infoStream() << "Client " << client->getId() << " disconnected";
-    if (visualMode) {
-        console->log(text.str());
+    CoSocket::peers_t inform;
+    for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
+        CoSocket* c = it->second; // "client" is already erased
+        if (client->isPeer(c))
+            inform.insert(c->id());
+        c->removePeer(c->id());
     }
+    sendRemoveClient(client, inform);
+
+    // tell other clients with use_peers that this one is gone; do not tell to other clients
+    miQMessage unregP(qmstrings::unregisteredclient);
+    addRegisteredClient(unregP, client);
+    const CoSocket::peers_t clients_V1 = clientsForUser(client, 1, 1);
+    broadcastFromServer(clients_V1, unregP);
+
+    METLIBS_LOG_INFO("Client " << client->id() << " disconnected");
+    client->deleteLater();
 
     // exit if no more clients are connected
-    if (dynamicMode && clients.size() <= 0)
-        QApplication::exit(1);
-}
-
-void CoServer4::serve(miMessage &msg, int id)
-{
-    mutex.lock();
-    if (clients.find(id) != clients.end()) {
-        serve(msg, clients[id]);
-    }
-    mutex.unlock();
-}
-
-/**
-  Mutex is lock outside
-  */
-
-void CoServer4::serve(miMessage &msg, CoSocket *client)
-{
-    MI_LOG & log = MI_LOG::getInstance(PKG".serve");
-    if (msg.to == -1) {
-        string userId = "";
-        // broadcast message
-        if (client != 0) {
-            msg.from = client->getId();
-	} else {
-            msg.from = 0;
-        }
-        log.debug("serve - internal");
-        internal(msg, client); ///< broadcast to server also
-        if (client != 0) {
-            userId = client->getUserId();
-        }
-        log.debug("serve - broadcast");
-        broadcast(msg, userId);
-        log.debug("Broadcast message relayed");
-    } else if (msg.to == 0 && client != 0) {
-        // message is addressed to server (not in use??)
-        internal(msg, client);
-        log.debug("Server message received");
-    } else {
-        // send message to the addressed client
-        if (client != 0) {
-            msg.from = client->getId();
-        } else {
-            msg.from = 0;
-        }
-        if (clients.find(msg.to) != clients.end()) {
-            clients[msg.to]->sendMessage(msg);
-            log.debug("Direct message relayed");
-        }
-
-        if (visualMode && msg.from) {
-            cerr << msg.content().c_str();
-        }
+    if (clients.empty()) {
+        if (dynamicMode)
+            QCoreApplication::exit(1);
+        else
+            nextId = 0;
     }
 }
 
-int CoServer4::newId()
+void CoServer4::onClientReceivedMessage(CoSocket* client, const ClientIds& toIds, const miQMessage &qmsg)
 {
-    return ++id;
+    METLIBS_LOG_SCOPE(LOGVAL(qmsg.command()));
+    if (!messageToServer(client, toIds, qmsg))
+        broadcastFromClient(client, toIds, qmsg);
+}
+
+int CoServer4::generateId()
+{
+    // FIXME make sure that ids do not overflow
+    return ++nextId;
 }
 
 bool CoServer4::ready()
 {
-    return isListening();
+    if (tcpServer)
+        return tcpServer->isListening();
+    else if (localServer)
+        return localServer->isListening();
+    else
+        return false;
 }
 
-
-void CoServer4::internal(miMessage &msg, CoSocket *client)
+bool CoServer4::messageToServer(CoSocket *client, const ClientIds& toIds, const miQMessage &qmsg)
 {
-    MI_LOG & log = MI_LOG::getInstance(PKG".internal");
-    if (msg.command == "SETTYPE") {
-        // set type in list of clients
-        client->setType(msg.data[0].c_str());
-        // set userId
-        if (msg.commondesc == "userId") {
-            client->setUserId(msg.common.c_str());
-            log.infoStream() << "New client from user: " << client->getUserId();
-        }
+    METLIBS_LOG_SCOPE();
 
-        ostringstream text;
-        text << "New client is of type " << client->getType().c_str();
-        log.infoStream() << "New client is of type " << client->getType().c_str();
-        if (visualMode) {
-            console->log(text.str());
-        }
-        // broadcast the type of new connected client
-        QString data;
-        QTextStream s(&data, QIODevice::WriteOnly);
-        s << client->getId() << ':' << QString(client->getType().c_str())
-          << ':' << client->getUserId().c_str();
+    const int toId1 = (toIds.size() == 1) ? *toIds.begin() : -1;
 
-        miMessage update;
-        update.to = -1;
-        update.from = 0;
-        update.command = qmstrings::newclient;
-        update.commondesc = "id:type:uid";
-        update.common = data.toAscii().data();
-        log.debug("broadcast");
-        broadcast(update, client->getUserId());
-        // serve(update);
+    if (qmsg.command() == "SETTYPE") {
+        handleSetType(client, qmsg);
+    } else if (qmsg.command() == "SETNAME") {
+        handleSetName(client, qmsg);
+    } else if (qmsg.command() == "SETPEERS") {
+        handleSetPeers(client, qmsg);
+    } else {
+        if (toId1 == 0)
+            METLIBS_LOG_WARN("unknown command '" << qmsg.command()
+                    << "' from client id " << client->id() << " to server");
+        return false;
+    }
+    if (toId1 != 0)
+        METLIBS_LOG_WARN("client did not send " << qmsg.command() << " to id 0");
+    return true;
+}
+
+void CoServer4::handleSetType(CoSocket* client, const miQMessage& qmsg)
+{
+    METLIBS_LOG_SCOPE();
+    int idx = qmsg.findCommonDesc("protocolVersion");
+    if (idx >= 0) {
+        int v = qmsg.getCommonValue(idx).toInt();
+        METLIBS_LOG_DEBUG(LOGVAL(v));
+        client->setProtocolVersion(qmsg.getCommonValue(idx).toInt());
+    }
+
+    if (client->hasTypeUserName()) {
+        METLIBS_LOG_ERROR("ignoring extra SETTYPE from client " << client->id());
+        return;
+    }
+
+    QString cType, cUserId, cName;
+    idx = qmsg.findCommonDesc("type");
+    if (idx >= 0) {
+        cType = qmsg.getCommonValue(idx);
+    } else {
+        idx = qmsg.findDataDesc("INTERNAL");
+        if (idx >= 0 && qmsg.countDataRows() >= 1)
+            cType = qmsg.getDataValue(0, idx);
+    }
+
+    idx = qmsg.findCommonDesc("userId");
+    if (idx >= 0)
+        cUserId = qmsg.getCommonValue(idx);
+
+    idx = qmsg.findCommonDesc("name");
+    if (idx >= 0)
+        cName = qmsg.getCommonValue(idx);
+    else
+        cName = cType;
+
+    client->setTypeUserName(cType, cUserId, cName);
+    METLIBS_LOG_INFO("client " << client->id() << " has type '" << cType
+            << "' userId '" << cUserId << "' name '" << cName << "'");
+
+    if (client->usePeers()) {
+        miQMessage reg(qmstrings::registeredclient);
+        reg.addCommon("id", client->id());
+
+        // send a list of ALL connected clients
+        const CoSocket::peers_t same_user = clientsForUser(client, 0, 1);
+        for (CoSocket::peers_t::const_iterator itP = same_user.begin(); itP != same_user.end(); ++itP)
+            addRegisteredClient(reg, findClient(*itP));
+        client->sendMessage(0, reg);
+    } else {
+        const CoSocket::peers_t clients_V0 = clientsForUser(client, 0, 0);
+        sendNewClient(client, clients_V0);
 
         // sends the list of already connected clients to the new client
-        if (clients.size() > 1) {
+        for (CoSocket::peers_t::const_iterator itP = clients_V0.begin(); itP != clients_V0.end(); ++itP)
+            sendNewClient(findClient(*itP), client);
+    }
 
-            map<int, CoSocket*>::iterator it;
-            for (it = clients.begin(); it != clients.end(); it++) {
-                CoSocket *tclient = it->second;
+    // tell other clients with use_peers about this one; do not tell to other clients
+    miQMessage regP(qmstrings::registeredclient);
+    addRegisteredClient(regP, client);
+    const CoSocket::peers_t clients_V1 = clientsForUser(client, 1, 1);
+    broadcastFromServer(clients_V1, regP);
+}
 
-                // do not send message to yourself
-                if (!(tclient->getId() == client->getId())) {
-                    // Or to other the my userId if not old clients possible
-                    if (client->getUserId() == "" || tclient->getUserId() == "" ||
-                            client->getUserId() == tclient->getUserId()) {
-                        QString data;
-                        QTextStream s(&data, QIODevice::WriteOnly);
-                        s << tclient->getId() << ':' << QString(tclient->getType().c_str());
+void CoServer4::handleSetName(CoSocket* client, const miQMessage& qmsg)
+{
+    METLIBS_LOG_SCOPE();
+    int idx = qmsg.findCommonDesc("name");
+    if (idx < 0)
+        return;
 
-                        miMessage update;
-                        update.to = client->getId();
-                        update.from = 0;
-                        update.command = qmstrings::newclient;
-                        update.commondesc = "id:type";
-                        update.common = data.toAscii().data();
-                        log.debug("serve");
-                        serve(update);
-                    }
-                }
-            }
+    const QString& name = qmsg.getCommonValue(idx);
+    if (name == client->getName())
+        return;
+
+    client->setName(name);
+    METLIBS_LOG_INFO("New client name: " << client->getName());
+
+    miQMessage update(qmstrings::renameclient);
+    update.addCommon("id", client->id());
+    update.addCommon("name", client->getName());
+
+    const CoSocket::peers_t clients_V1 = clientsForUser(client, 1, 1);
+    broadcastFromServer(clients_V1, update);
+}
+
+void CoServer4::handleSetPeers(CoSocket* client, const miQMessage& qmsg)
+{
+    METLIBS_LOG_SCOPE();
+    int idx = qmsg.findDataDesc("peer_ids");
+    METLIBS_LOG_DEBUG(LOGVAL(idx));
+    if (idx < 0)
+        return;
+
+    const CoSocket::peers_t before = peerIds(client);
+
+    CoSocket::peers_t listed;
+    for (int r=0; r<qmsg.countDataRows(); ++r) {
+        const int peerId = qmsg.getDataValue(r, idx).toInt();
+        CoSocket* pc = findClient(peerId);
+        if (!pc || !client->matchUser(pc)) {
+            METLIBS_LOG_WARN("SETPEERS from " << client->id() << " with bad peer " << peerId);
+            continue;
         }
+        METLIBS_LOG_DEBUG("listed: " << peerId);
+        listed.insert(peerId);
+    }
+    client->setPeers(listed);
+
+    const CoSocket::peers_t after = peerIds(client);
+    METLIBS_LOG_DEBUG(LOGVAL(before.size()) << LOGVAL(after.size()));
+
+    CoSocket::peers_t added, removed;
+    std::set_difference(before.begin(), before.end(), after.begin(), after.end(),
+            std::insert_iterator<CoSocket::peers_t>(removed, removed.begin()));
+    std::set_difference(after.begin(), after.end(), before.begin(), before.end(),
+            std::insert_iterator<CoSocket::peers_t>(added, added.begin()));
+
+    METLIBS_LOG_DEBUG(LOGVAL(added.size()) << LOGVAL(removed.size()));
+
+    if (!removed.empty()) {
+        sendRemoveClient(client, removed);
+
+        CoSocket::peers_t to_sender;
+        to_sender.insert(client->id());
+        for (CoSocket::peers_t::const_iterator itP = removed.begin(); itP != removed.end(); ++itP) {
+            METLIBS_LOG_DEBUG("removed " << *itP);
+            sendRemoveClient(findClient(*itP), to_sender);
+        }
+    }
+    if (!added.empty()) {
+        sendNewClient(client, added);
+
+        for (CoSocket::peers_t::const_iterator itP = added.begin(); itP != added.end(); ++itP) {
+            METLIBS_LOG_DEBUG("added " << *itP);
+            sendNewClient(findClient(*itP), client);
+        }
+    }
+}
+
+CoSocket* CoServer4::findClient(int id)
+{
+    clients_t::iterator it = clients.find(id);
+    if (it != clients.end())
+        return it->second;
+    else
+        return 0;
+}
+
+CoSocket::peers_t CoServer4::peerIds(CoSocket* client)
+{
+    METLIBS_LOG_SCOPE(LOGVAL(client->id()));
+    CoSocket::peers_t peers;
+    for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
+        CoSocket* c = it->second;
+        if (c != client && client->isPeer(c)) {
+            METLIBS_LOG_DEBUG("peer: " << c->id());
+            peers.insert(c->id());
+        } else {
+            METLIBS_LOG_DEBUG("no peer: " << c->id());
+        }
+    }
+    return peers;
+}
+
+CoSocket::peers_t CoServer4::clientsForUser(CoSocket* client, int protoMin, int protoMax)
+{
+    CoSocket::peers_t all;
+    for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
+        CoSocket* pc = it->second;
+        if (pc != client && client->matchUser(pc)
+                && (pc->protocolVersion() >= protoMin)
+                && (pc->protocolVersion() <= protoMax))
+        {
+            all.insert(pc->id());
+        }
+    }
+    return all;
+}
+
+void CoServer4::sendRemoveClient(CoSocket* client, const CoSocket::peers_t& to_whom)
+{
+    miQMessage update(qmstrings::removeclient);
+    update.addCommon("id", client->id());
+    update.addCommon("type", client->getType());
+
+    broadcastFromServer(to_whom, update);
+}
+
+void CoServer4::sendNewClient(CoSocket* client, const CoSocket::peers_t& to_whom)
+{
+    miQMessage update(qmstrings::newclient);
+    update.addCommon("id", client->id());
+    update.addCommon("type", client->getType());
+    update.addCommon("userId", client->getUserId());
+    update.addCommon("name", client->getName());
+
+    broadcastFromServer(to_whom, update);
+}
+
+void CoServer4::sendNewClient(CoSocket* client, CoSocket* to_whom)
+{
+    miQMessage update(qmstrings::newclient);
+    update.addCommon("id",   client->id());
+    update.addCommon("type", client->getType());
+    update.addCommon("name", client->getName());
+    to_whom->sendMessage(0, update);
+}
+
+void CoServer4::broadcastFromServer(const CoSocket::peers_t& toIds, const miQMessage &qmsg)
+{
+    METLIBS_LOG_SCOPE(LOGVAL(qmsg.command()) << LOGVAL(toIds.size()));
+    for (CoSocket::peers_t::const_iterator itP = toIds.begin(); itP != toIds.end(); ++itP) {
+        if (CoSocket* tc = findClient(*itP))
+            tc->sendMessage(0, qmsg);
     }
 }

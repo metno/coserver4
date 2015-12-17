@@ -29,101 +29,69 @@
 #ifndef _COSERVER4
 #define _COSERVER4
 
-// Qt-includes
-#include <QTcpSocket>
+#include "CoSocket.h"
+
+#include <coserver/miMessage.h>
+
+#include <QLocalServer>
 #include <QTcpServer>
-#include <QMutex>
 
 #include <vector>
 #include <map>
 
-#ifdef HAVE_LOG4CXX
-#include <log4cxx/logger.h>
-#include <log4cxx/propertyconfigurator.h>
-#include <log4cxx/basicconfigurator.h>
-#else
-#include <miLogger/logger.h>
-#endif
-#ifdef COSERVER
-#include <coserver/miMessage.h>
-#else
-#include <qUtilities/miMessage.h>
-#endif
-#include "CoSocket.h"
-#include "CoConsole.h"
+class CoServer4: public QObject {
+    Q_OBJECT
 
-class CoServer4: public QTcpServer {
-Q_OBJECT
-
-protected:
-#ifdef HAVE_LOG4CXX
-  log4cxx::LoggerPtr logger;
-#endif
-
-private:
-  std::map<int, CoSocket*> clients;
-  CoConsole *console;
-  quint16 port;
-  QMutex mutex;
-
-  /**
-   * Internal helper function. Sets type of new connecting client,
-   * and transmit a list of already connected clients.
-   * @param msg The message
-   * @param client The originating client
-   */
-  void internal(miMessage &msg, CoSocket *client);
-  int id;
-  int newId();
-  bool dynamicMode, visualMode;
-
-  /**
-   * Broadcasts a message to all connected clients.
-   * @param msg Message to broadcast
-   */
-  void broadcast(miMessage &msg, string userId = "");
-
-  /**
-   * Handles new connecting clients.
-   */
-  void incomingConnection(int);
-
-  //int writePortToFile();
-  
 public:
-  /**
-   * CoServer4.
-   * @param port Port to connect to
-   * @param vm Run in visual (GUI) mode
-   * @param dm Run in dynamic mode
-   * @param logPropFile When given, log4cxx will use logPropFilename as properties file
-   * @param logPropFilename The log4cxx properties file
-   */
-  CoServer4(quint16 port, bool vm, bool dm, bool logPropFile = false,
-      const std::string& logPropFilename = "");
-    
-  /**
-   * Process incoming message.
-   * @param l The message
-   * @param client The originating client
-   */
-  void serve(miMessage &l, CoSocket* client = 0);
+    /**
+     * @param url server url
+     * @param dm Run in dynamic mode
+     */
+    CoServer4(const QUrl& url, bool dm);
 
-  /**
-   * Kills a client, and then notifies the other clients of the event.
-   * Will shut down coserver4 if in dynamicMode and no more
-   * clients are connected.
-   * @param client Client to remove
-   */
-  void killClient(CoSocket* client);
-  bool ready(void);
-  
-  //int readPortFromFile(quint16& port);
+    bool ready();
 
 private Q_SLOTS:
-    void connectionClosed(int id);
-    void serve(miMessage &mi, int id);
-    
+    void onNewConnection();
+
+    void onClientConnectionClosed(CoSocket* client);
+    void onClientReceivedMessage(CoSocket* client, const ClientIds& toIds, const miQMessage &qmsg);
+
+private:
+    /*! check if this is a message for the server, and handle it
+     * @return true iff it was a message for the server
+     */
+    bool messageToServer(CoSocket *client, const ClientIds& toIds, const miQMessage &qmsg);
+
+    void handleSetType(CoSocket* client, const miQMessage& qmsg);
+    void handleSetName(CoSocket* client, const miQMessage& qmsg);
+    void handleSetPeers(CoSocket* client, const miQMessage& qmsg);
+
+    int generateId();
+
+    //! Broadcasts a message from one client to its peers
+    void broadcastFromClient(CoSocket* sender, const ClientIds& toIds, const miQMessage &qmsg);
+
+    void sendRemoveClient(CoSocket* client, const CoSocket::peers_t& toIds);
+    void sendNewClient(CoSocket* client, CoSocket* to_whom);
+    void sendNewClient(CoSocket* client, const CoSocket::peers_t& toIds);
+
+    //! Broadcasts a message from the server to the list of clients
+    void broadcastFromServer(const CoSocket::peers_t& toIds, const miQMessage &qmsg);
+
+    CoSocket* findClient(int id);
+    CoSocket::peers_t peerIds(CoSocket* client);
+    CoSocket::peers_t clientsForUser(CoSocket* client, int protoMin, int protoMax);
+
+private:
+    QTcpServer* tcpServer;
+    QLocalServer* localServer;
+    bool dynamicMode;
+
+    int nextId;
+
+    typedef std::map<int, CoSocket*> clients_t;
+    clients_t clients;
 };
 
 #endif

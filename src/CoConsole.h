@@ -32,27 +32,13 @@
 #ifndef _COCONSOLE
 #define _COCONSOLE
 
-// Qt-includes
 #include <QTextEdit>
 #include <QPushButton>
 #include <QLabel>
 #include <QDialog>
 
-#ifdef HAVE_LOG4CXX
-#include <log4cxx/logger.h>
-#else
-#include <miLogger/logger.h>
-#endif
-
-using namespace std;
-
 class CoConsole : public QDialog {
 	Q_OBJECT;
-
-protected:
-#ifdef HAVE_LOG4CXX
-	log4cxx::LoggerPtr logger;
-#endif
 
 public:
 	/**
@@ -64,7 +50,7 @@ public:
 	 * Displays log message.
 	 * @param text The log message
 	 */
-	void log(const string &text);
+	void log(const std::string &text);
 
 private:
 	QTextEdit *textfield;

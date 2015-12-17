@@ -28,19 +28,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// Qt-includes
+#include "CoConsole.h"
+
 #include <QVBoxLayout>
 #include <qapplication.h>
 
-#include <CoConsole.h>
-
 CoConsole::CoConsole() : QDialog() {
 	setWindowTitle("CoServer4");
-	
-#ifdef HAVE_LOG4CXX
-	logger = log4cxx::Logger::getLogger("coserver4.CoConsole"); ///< LOG4CXX init
-#endif
-	
+
 	// set dialog layout
 	QVBoxLayout *layout = new QVBoxLayout;
 	setLayout(layout);
@@ -61,7 +56,7 @@ CoConsole::CoConsole() : QDialog() {
 	connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
 }
 
-void CoConsole::log(const string &text) {
+void CoConsole::log(const std::string &text) {
 	textfield->insertPlainText(text.c_str());
 	textfield->insertPlainText("\n");
 	textfield->ensureCursorVisible();

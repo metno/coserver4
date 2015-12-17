@@ -1,10 +1,8 @@
 /**
- * coserver2
+ * coserver4
  * @author Martin Lilleeng Sætra <martinls@met.no>
  *
- * $Id: CoSocket.cc,v 1.13 2007/09/04 11:00:40 martinls Exp $
- *
- * Copyright (C) 2007 met.no
+ * Copyright (C) 2007-2015 met.no
  *
  * Contact information:
  * Norwegian Meteorological Institute
@@ -28,121 +26,132 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// Qt-includes
-#include <QDataStream>
-#include <QTextStream>
+#include "CoSocket.h"
 
-#include <iostream>
-
-#include <CoSocket.h>
+#include <coserver/miMessage.h>
+#include <coserver/miMessageIO.h>
 #include <miLogger/LogHandler.h>
 
-#define PKG "coserver4.CoSocket"
+#define MILOGGER_CATEGORY "coserver4.CoSocket"
+#include <qUtilities/miLoggingQt.h>
 
-CoSocket::CoSocket(int sock, QObject *parent)
-    : QTcpSocket(parent)
+CoSocket::CoSocket(int id, QObject *parent)
+    : QObject(parent)
+    , tcpSocket(0)
+    , localSocket(0)
+    , closed(true)
+    , mId(id)
+    , mHasTypeUserName(false)
 {
-    MI_LOG & log = MI_LOG::getInstance(PKG".CoSocket");
+    METLIBS_LOG_SCOPE();
+}
 
-    blockSize = 0;
-    userId = "";
+void CoSocket::setSocket(QLocalSocket* local)
+{
+    METLIBS_LOG_SCOPE();
     closed = false;
-    setSocketDescriptor(sock);
+    localSocket = local;
+    io.reset(new miMessageIO(local, true));
 
-    connect(this, SIGNAL(readyRead()), SLOT(readNew()));
-    connect(this, SIGNAL(disconnected()), SLOT(connectionClosed()));
-    connect(this, SIGNAL(aboutToClose()), SLOT(aboutToClose()));
-    // socket error
-    connect(this, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(local, SIGNAL(readyRead()), SLOT(readNew()));
+    connect(local, SIGNAL(disconnected()), SLOT(connectionClosed()));
+    connect(local, SIGNAL(aboutToClose()), SLOT(aboutToClose()));
+    connect(local, SIGNAL(error(QLocalSocket::LocalSocketError)),
+            SLOT(localError(QLocalSocket::LocalSocketError)));
+}
 
+void CoSocket::setSocket(QTcpSocket* tcp)
+{
+    METLIBS_LOG_SCOPE();
+    closed = false;
+    tcpSocket = tcp;
+    io.reset(new miMessageIO(tcp, true));
+
+    connect(tcp, SIGNAL(readyRead()), SLOT(readNew()));
+    connect(tcp, SIGNAL(disconnected()), SLOT(connectionClosed()));
+    connect(tcp, SIGNAL(aboutToClose()), SLOT(aboutToClose()));
+    connect(tcp, SIGNAL(error(QAbstractSocket::SocketError)),
+            SLOT(tcpError(QAbstractSocket::SocketError)));
 }
 
 CoSocket::~CoSocket()
 {
-
 }
 
-void CoSocket::setId(int id) {
-    this->id = id;
+void CoSocket::setTypeUserName(const QString& t, const QString& u, const QString& n)
+{
+    if (!mHasTypeUserName) {
+        mHasTypeUserName = true;
+        type = t;
+        userId = u;
+        name = n;
+    }
 }
 
-int CoSocket::getId() {
-    return id;
-}
-
-void CoSocket::setUserId(string id) {
-    this->userId = id;
-}
-
-string CoSocket::getUserId() {
+const QString& CoSocket::getUserId()
+{
     return userId;
 }
 
-void CoSocket::setType(string type) {
-    this->type = type;
-}
-
-string CoSocket::getType(void) {
+const QString& CoSocket::getType()
+{
     return type;
 }
 
-void CoSocket::readNew() {
-    MI_LOG & log = MI_LOG::getInstance(PKG".readNew");
-    QDataStream in(this);
-    in.setVersion(QDataStream::Qt_4_0);
+void CoSocket::setName(const QString& n)
+{
+    name = n;
+}
 
-    // make sure that the whole message has been written
-    log.debugStream() << "bytesAvailable(): " << bytesAvailable();
+const QString& CoSocket::getName()
+{
+    return name;
+}
 
-    if (blockSize == 0) {
-        if (bytesAvailable() < (int)sizeof(quint32))
-            return;
-        in >> blockSize;
+bool CoSocket::matchUser(CoSocket* p) const
+{
+    METLIBS_LOG_SCOPE(LOGVAL(userId) << LOGVAL(p->userId));
+
+    const bool match = (userId == p->userId)
+            // broadcast client = empty userid
+            || (userId.isEmpty() || p->userId.isEmpty());
+    METLIBS_LOG_DEBUG(LOGVAL(match));
+    return match;
+}
+
+bool CoSocket::isPeer(CoSocket* p) const
+{
+    METLIBS_LOG_SCOPE();
+    if (!matchUser(p))
+        return false;
+
+    METLIBS_LOG_DEBUG(LOGVAL(mId) << LOGVAL(p->mId)
+            << LOGVAL(usePeers()) << LOGVAL(p->usePeers())
+            << LOGVAL(mPeers.count(p->mId)) << LOGVAL(p->mPeers.count(mId)));
+
+    if (!usePeers() && !p->usePeers())
+        return true;
+
+    if (usePeers() && mPeers.count(p->mId))
+        return true;
+
+    if (p->usePeers() && p->mPeers.count(mId))
+        return true;
+
+    return false;
+}
+
+void CoSocket::readNew()
+{
+    METLIBS_LOG_SCOPE();
+
+    int fromId;
+    ClientIds toIds;
+    miQMessage qmsg;
+    while (io->read(fromId, toIds, qmsg)) {
+        METLIBS_LOG_DEBUG(qmsg);
+        Q_EMIT receivedMessage(this, toIds, qmsg);
     }
-
-    if (bytesAvailable() < blockSize)
-        return;
-
-    // read incoming message
-    miMessage msg;
-    QString tmpcommand, tmpdescription, tmpcommondesc, tmpcommon,
-            tmpclientType, tmpco, tmpdata;
-    int size = 0;
-
-    in >> msg.to;
-    // server-side socket knows the id
-    msg.from = id;
-    in >> tmpcommand;
-    msg.command = tmpcommand.toStdString();
-    in >> tmpdescription;
-    msg.description = tmpdescription.toStdString();
-    in >> tmpcommondesc;
-    msg.commondesc = tmpcommondesc.toStdString();
-    in >> tmpcommon;
-    msg.common = tmpcommon.toStdString();
-    in >> tmpclientType;
-    msg.clientType = tmpclientType.toStdString();
-    in >> tmpco;
-    msg.co = tmpco.toStdString();
-    in >> size; // NOT A FIELD IN MIMESSAGE (METADATA ONLY)
-    for (int i = 0; i < size; i++) {
-        in >> tmpdata;
-        msg.data.push_back(tmpdata.toStdString());
-    }
-
-    log.debugStream() << "miMessage in CoSocket::readNew() (RECV)";
-    log.debugStream() << msg.content();
-
-    // process message
-    //server->serve(msg, this);
-
-    emit newMessage(msg, getId());
-
-    blockSize = 0;
-
-    // more unread messages on socket?
-    if(bytesAvailable() > 0)
-        readNew();
 }
 
 bool CoSocket::isClosed()
@@ -150,63 +159,59 @@ bool CoSocket::isClosed()
     return closed;
 }
 
-void CoSocket::sendMessage(miMessage &msg) {
-    MI_LOG & log = MI_LOG::getInstance(PKG".sendMessage");
-
-    if (state() == QTcpSocket::ConnectedState && !closed) {
-        log.debugStream() << "miMessage in CoSocket::sendMessage() (SEND)" << getId();
-        log.debugStream() << msg.content();
-
-        QByteArray block;
-        QDataStream out(&block, QIODevice::WriteOnly);
-        out.setVersion(QDataStream::Qt_4_0);
-
-        // send message to server
-        out << (quint32)0;
-
-        out << msg.to;
-        out << msg.from;
-        out << QString(msg.command.c_str());
-        out << QString(msg.description.c_str());
-        out << QString(msg.commondesc.c_str());
-        out << QString(msg.common.c_str());
-        out << QString(msg.clientType.c_str());
-        out << QString(msg.co.c_str());
-        out << (quint32)msg.data.size(); // NOT A FIELD IN MIMESSAGE (TEMP ONLY)
-        for (int i = 0; i < msg.data.size(); i++)
-            out << QString(msg.data[i].c_str());
-
-        out.device()->seek(0);
-        out << (quint32)(block.size() - sizeof(quint32));
-
-        write(block);
-        // waitForBytesWritten(1000);
-
-        //flush();
-    } else {
-        log.errorStream() << "Error sending message state: " << state() << " closed: " << closed;
-    }
+bool CoSocket::isValid()
+{
+    if (!io.get())
+        return false;
+    if (tcpSocket)
+        return tcpSocket->isValid();
+    if (localSocket)
+        return localSocket->isValid();
+    return false;
 }
 
-void CoSocket::socketError(QAbstractSocket::SocketError e)
+void CoSocket::sendMessage(int fromId, const miQMessage &qmsg)
 {
-    MI_LOG & log = MI_LOG::getInstance(PKG".socketError");
+    METLIBS_LOG_SCOPE(LOGVAL(fromId));
+    METLIBS_LOG_DEBUG(qmsg);
 
-    if ( QAbstractSocket::RemoteHostClosedError == e ) {
-        log.info("CoClient unexpected shutdown or crash");
+    if (!isValid()) {
+        METLIBS_LOG_ERROR("trying to sending message while invalid");
+        return;
     }
+
+    io->write(fromId, clientId(mId), qmsg);
+}
+
+void CoSocket::tcpError(QAbstractSocket::SocketError e)
+{
+    METLIBS_LOG_SCOPE();
+
+    if (QAbstractSocket::RemoteHostClosedError == e)
+        METLIBS_LOG_INFO("client disconnect");
     else
-        log.infoStream() << "Error when contacting coserver: " << e;
+        METLIBS_LOG_INFO("error " << e);
+}
+
+void CoSocket::localError(QLocalSocket::LocalSocketError e)
+{
+    METLIBS_LOG_SCOPE();
+
+    if (QLocalSocket::PeerClosedError == e)
+        METLIBS_LOG_INFO("client disconnect");
+    else
+        METLIBS_LOG_INFO("error " << e);
 }
 
 void CoSocket::aboutToClose()
 {
-    //cerr << "about to close" << getId() << endl;
+    METLIBS_LOG_SCOPE();
     closed = true;
 }
 
-void CoSocket::connectionClosed() {
-    //cerr <<  "connectionClosed " << getId() << endl;
+void CoSocket::connectionClosed()
+{
+    METLIBS_LOG_SCOPE();
     closed = true;
-    emit connectionClosed(getId());
+    Q_EMIT connectionClosed(this);
 }

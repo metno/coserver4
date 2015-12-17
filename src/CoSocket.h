@@ -1,11 +1,9 @@
 /** @file CoSocket.h
  * @author Martin Lilleeng Sætra <martinls@met.no>
- * 
- * coserver4
- * 
- * $Id: CoSocket.h,v 1.7 2007/09/04 10:34:45 martinls Exp $
  *
- * Copyright (C) 2007 met.no
+ * coserver4
+ *
+ * Copyright (C) 2007-2015 met.no
  *
  * Contact information:
  * Norwegian Meteorological Institute
@@ -23,76 +21,115 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _COSOCKET
-#define _COSOCKET
+#ifndef COSERVER4_COSOCKET
+#define COSERVER4_COSOCKET 1
 
-// Qt-includes
+#include <coserver/miMessage.h>
+#include <coserver/miMessageIO.h>
+
+#include <QLocalSocket>
+#include <QObject>
 #include <QTcpSocket>
 
-#ifdef COSERVER
-#include <coserver/miMessage.h>
-#else
-#include <qUtilities/miMessage.h>
-#endif
+#include <memory>
+#include <set>
 
-using namespace std;
+class miMessageIO;
 
-class CoSocket : public QTcpSocket
+class CoSocket : public QObject
 {
     Q_OBJECT
 
 public:
-    void setId(int);
-    int getId(void);
-    void setUserId(string);
-    string getUserId(void);
-    void setType(string);
-    string getType(void);
-    bool isClosed();
+    typedef std::set<int> peers_t;
 
-    /**
-  * CoSocket.
-  * @param sock The socketdescriptor
-  * @param parent Parent object
-  */
-    CoSocket(int sock, QObject *parent);
+public:
+    CoSocket(int id, QObject* parent);
     ~CoSocket();
 
-    /**
-  * Sends message to client.
-  * @param msg The message
-  */
-    void sendMessage(miMessage &msg);
+    void setSocket(QLocalSocket* local);
+    void setSocket(QTcpSocket* tcp);
 
-private:
-    int id;
-    string userId;
-    quint32 blockSize;
-    string type;
-    volatile bool closed;
+    void setTypeUserName(const QString& type, const QString& userId, const QString& name);
 
-private slots:
+    bool hasTypeUserName()
+        { return mHasTypeUserName; }
+
+    int id() const
+        { return mId; }
+
+    const QString& getUserId();
+
+    const QString& getType();
+
+    void setName(const QString&);
+    const QString& getName();
+
+    bool isClosed();
+    bool isValid();
+
+    int protocolVersion() const
+        { return io->protocolVersion(); }
+
+    void setProtocolVersion(int pv)
+        { io->setProtocolVersion(pv); }
+
+    bool usePeers() const
+        { return protocolVersion() > 0; }
+
+    void removePeer(int id)
+        { mPeers.erase(id); }
+
+    void setPeers(peers_t& p)
+        { mPeers = p; }
+
+    bool matchUser(CoSocket* p) const;
+    bool isPeer(CoSocket* p) const;
+
     /**
-  * Read new incoming message.
-  */
+     * Sends message to client.
+     * @param msg The message
+     */
+    void sendMessage(int fromId, const miQMessage& msg);
+
+
+private Q_SLOTS:
+    /**
+     * Read new incoming message.
+     */
     void readNew();
 
     /**
-  * Called when socket is disconnected.
-  */
+     * Called when socket is disconnected.
+     */
     void connectionClosed();
     void aboutToClose();
-    void socketError(QAbstractSocket::SocketError e);
 
-signals:
-    void connectionClosed(int id);
-    void newMessage(miMessage &msg, int id);
+    void tcpError(QAbstractSocket::SocketError e);
+    void localError(QLocalSocket::LocalSocketError e);
+
+Q_SIGNALS:
+    void connectionClosed(CoSocket* client);
+    void receivedMessage(CoSocket* client, const ClientIds& toIds, const miQMessage &qmsg);
+
+private:
+    QTcpSocket* tcpSocket;
+    QLocalSocket* localSocket;
+    std::auto_ptr<miMessageIO> io;
+    bool closed;
+
+    int mId;
+    bool mHasTypeUserName;
+    QString userId;
+    QString type;
+    QString name;
+    peers_t mPeers;
 };
 
-#endif
+#endif // COSERVER4_COSOCKET
