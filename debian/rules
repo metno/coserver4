@@ -7,4 +7,5 @@ DH_COMMAND = dh --with python2
 
 override_dh_auto_configure:
 	./autogen.sh
-	./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+	./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
+	    --with-gtest=/usr/src/gmock/gtest

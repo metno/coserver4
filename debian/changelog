@@ -1,3 +1,9 @@
+coserver4 (5.0.0-2) unstable; urgency=low
+
+  * build-depend on google-mock
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Mon, 4 Jan 2016 09:00:09 +0100
+
 coserver4 (5.0.0-1) unstable; urgency=low
 
   * use new metlibs/coserver library
