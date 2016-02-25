@@ -1,13 +1,13 @@
 .\"                                      Hey, EMACS: -*- nroff -*-
-.TH COSERVER4 1 "February 11, 2013"
+.TH COSERVER4 1 "February 25, 2016"
 .SH NAME
 coserver4 \- connect Diana and client programs
 .SH SYNOPSIS
 .B coserver4
-[-d] [-v] [-p
-.I port
+[-d] [-u
+.I url
 ] [-L
-.I log4cxx-properties-file
+.I log4cpp-properties-file
 ]
 .SH DESCRIPTION
 coserver4 is a daemon that allows connecting diana and client programs.
@@ -16,19 +16,20 @@ coserver4 is a daemon that allows connecting diana and client programs.
 enables dynamic mode, i.e., the daemon exits when the last client
 disconnects.
 
-.B -v
-enables visual mode, i.e., communication is displayed in a GUI.
-
-.B -p
-.I port
-sets the port number to listen at.
+.B -u
+.I url
+Specifies where the daemon listens via a URL. If the scheme is
+\fBco4\fR, the host part is ignored and the server listens on the
+given port, or the default port 19444. If the scheme is \fBlocal\fR,
+the server listens on a local socket as specified in the URL
+\fBpath\fR.
 
 .B -L
-.I log4cxx-properties-file
-allows configuring the logging output.
+.I log4cpp-properties-file
+Allows configuring the logging output.
 
 .SH SEE ALSO
 .BR diana (1)
 .PP
 This manual page was written by Alexander B\(:urger
-<alexander.buerger@met.no> in February 2013.
+<alexander.buerger@met.no> in February 2016.

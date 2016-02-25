@@ -58,7 +58,7 @@ bool portFromRange = false;
     opt[2].hasArg = true;
 
     opt[3].flag = 'L';
-    opt[3].alias = "log4cxx-properties-file";
+    opt[3].alias = "log4cpp-properties-file";
     opt[3].hasArg = true;
 
     miCommandLineStd cl(opt, argc, argv);
