@@ -1,6 +1,7 @@
 
 dir_gtest = gtest
 
+if HAVE_GTEST
 gtestdir = 
 gtest_LIBRARIES = libgtest.a libgtest_main.a
 
@@ -16,3 +17,4 @@ libgtest_main.a: ${gtest_src}/src/gtest_main.cc
 	$(CXX) $(gtest_CPPFLAGS) -pthread -c $<
 	$(AR) cru $@ gtest_main.o
 endif # MUST_COMPILE_GTEST
+endif # HAVE_GTEST
