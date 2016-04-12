@@ -91,6 +91,8 @@ CoServer4::CoServer4(const QUrl& url, bool dm)
         localServer->listen(url.path());
         connect(localServer, SIGNAL(newConnection()),
                 SLOT(onNewConnection()));
+    } else {
+        METLIBS_LOG_ERROR("unknown scheme '" << url.scheme() << "', cannot start server");
     }
 
     if (ready()) {
@@ -173,10 +175,12 @@ void CoServer4::onClientConnectionClosed(CoSocket* client)
     sendRemoveClient(client, inform);
 
     // tell other clients with use_peers that this one is gone; do not tell to other clients
-    miQMessage unregP(qmstrings::unregisteredclient);
-    addRegisteredClient(unregP, client);
     const CoSocket::peers_t clients_V1 = clientsForUser(client, 1, 1);
-    broadcastFromServer(clients_V1, unregP);
+    if (!clients_V1.empty()) {
+        miQMessage unregP(qmstrings::unregisteredclient);
+        addRegisteredClient(unregP, client);
+        broadcastFromServer(clients_V1, unregP);
+    }
 
     METLIBS_LOG_INFO("Client " << client->id() << " disconnected");
     client->deleteLater();
@@ -448,6 +452,9 @@ CoSocket::peers_t CoServer4::clientsForUser(CoSocket* client, int protoMin, int 
 
 void CoServer4::sendRemoveClient(CoSocket* client, const CoSocket::peers_t& to_whom)
 {
+    if (to_whom.empty())
+        return;
+
     miQMessage update(qmstrings::removeclient);
     update.addCommon("id", client->id());
     update.addCommon("type", client->getType());
@@ -457,6 +464,9 @@ void CoServer4::sendRemoveClient(CoSocket* client, const CoSocket::peers_t& to_w
 
 void CoServer4::sendNewClient(CoSocket* client, const CoSocket::peers_t& to_whom)
 {
+    if (to_whom.empty())
+        return;
+
     miQMessage update(qmstrings::newclient);
     update.addCommon("id", client->id());
     update.addCommon("type", client->getType());
