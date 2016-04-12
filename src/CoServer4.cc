@@ -47,6 +47,8 @@ using namespace std;
 
 namespace {
 
+const char STOP_COMMAND[] = "STOP_COSERVER";
+
 void addRegisteredClient(miQMessage& reg, CoSocket* c)
 {
     if (!c)
@@ -110,6 +112,10 @@ void CoServer4::onNewConnection()
     } else if (localServer) {
         QLocalSocket* local = localServer->nextPendingConnection();
         client->setSocket(local);
+    } else {
+        METLIBS_LOG_WARN("no server object, cannot accept connections.");
+        delete client;
+        return;
     }
     clients[client->id()] = client;
 
@@ -175,9 +181,9 @@ void CoServer4::onClientConnectionClosed(CoSocket* client)
     METLIBS_LOG_INFO("Client " << client->id() << " disconnected");
     client->deleteLater();
 
-    // exit if no more clients are connected
+    // exit if no more clients are connected, or if the server is shutting down
     if (clients.empty()) {
-        if (dynamicMode)
+        if (dynamicMode || !ready())
             QCoreApplication::exit(1);
         else
             nextId = 0;
@@ -219,6 +225,8 @@ bool CoServer4::messageToServer(CoSocket *client, const ClientIds& toIds, const 
         handleSetName(client, qmsg);
     } else if (qmsg.command() == "SETPEERS") {
         handleSetPeers(client, qmsg);
+    } else if (qmsg.command() == STOP_COMMAND) {
+        handleStopServer(client, qmsg);
     } else {
         if (toId1 == 0)
             METLIBS_LOG_WARN("unknown command '" << qmsg.command()
@@ -368,6 +376,34 @@ void CoServer4::handleSetPeers(CoSocket* client, const miQMessage& qmsg)
             sendNewClient(findClient(*itP), client);
         }
     }
+}
+
+void CoServer4::handleStopServer(CoSocket* client, const miQMessage& qmsg)
+{
+    if (qmsg.command() == STOP_COMMAND
+            && client->getName() == "coserver4_stop")
+    {
+        stopServer();
+    }
+}
+
+void CoServer4::stopServer()
+{
+    METLIBS_LOG_SCOPE();
+
+    // server owns all the client's sockets, we must delete the server later
+    QTcpServer* tcps = 0;
+    std::swap(tcpServer, tcps);
+    QLocalServer* locals = 0;
+    std::swap(localServer, locals);
+
+    while (!clients.empty()) {
+        CoSocket* c = clients.begin()->second;
+        c->close();
+    }
+
+    delete tcps;
+    delete locals;
 }
 
 CoSocket* CoServer4::findClient(int id)

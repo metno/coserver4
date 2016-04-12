@@ -1,5 +1,5 @@
 
-bin_PROGRAMS = coserver4
+bin_PROGRAMS = coserver4 coserver4_stop
 noinst_LIBRARIES = libco4server.a
 
 qt_sources = \
@@ -20,8 +20,14 @@ AM_CXXFLAGS=$(QT4_CPPFLAGS) $(COSERVER_CPPFLAGS) $(QUTILITIES_CPPFLAGS) $(PUTOOL
 AM_LDFLAGS= $(QT4_LDFLAGS)  $(COSERVER_LDFLAGS)  $(QUTILITIES_LDFLAGS)  $(PUTOOLS_LDFLAGS)  $(MILOGGER_LDFLAGS)  
 LDADD=      $(QT4_LIBS)     $(COSERVER_LIBS)     $(QUTILITIES_LIBS)     $(PUTOOLS_LIBS)     $(MILOGGER_LIBS)
 
-$(qt_moc): %_moc.cc: %.h
-	$(MOC4) $< -o $@
-
 coserver4_SOURCES = main.cc
 coserver4_LDADD = libco4server.a $(LDADD)
+
+
+coserver4_stop_SOURCES = coserver4_stop.cc
+css_moc = coserver4_stop_moc.cc
+nodist_coserver4_stop_SOURCES = $(css_moc)
+
+$(qt_moc) $(css_moc): %_moc.cc: %.h
+	$(MOC4) $< -o $@
+

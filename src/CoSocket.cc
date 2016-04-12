@@ -148,7 +148,7 @@ void CoSocket::readNew()
     int fromId;
     ClientIds toIds;
     miQMessage qmsg;
-    while (io->read(fromId, toIds, qmsg)) {
+    while (isValid() && io->read(fromId, toIds, qmsg)) {
         METLIBS_LOG_DEBUG(qmsg);
         Q_EMIT receivedMessage(this, toIds, qmsg);
     }
@@ -201,6 +201,24 @@ void CoSocket::localError(QLocalSocket::LocalSocketError e)
         METLIBS_LOG_INFO("client disconnect");
     else
         METLIBS_LOG_INFO("error " << e);
+}
+
+void CoSocket::close()
+{
+    METLIBS_LOG_SCOPE();
+    io.reset(0);
+
+    if (tcpSocket) {
+        tcpSocket->close();
+        tcpSocket->deleteLater();
+        tcpSocket = 0;
+    }
+
+    if (localSocket) {
+        localSocket->close();
+        localSocket->deleteLater();
+        localSocket = 0;
+    }
 }
 
 void CoSocket::aboutToClose()

@@ -66,6 +66,7 @@ private:
     void handleSetType(CoSocket* client, const miQMessage& qmsg);
     void handleSetName(CoSocket* client, const miQMessage& qmsg);
     void handleSetPeers(CoSocket* client, const miQMessage& qmsg);
+    void handleStopServer(CoSocket* client, const miQMessage& qmsg);
 
     int generateId();
 
@@ -78,6 +79,8 @@ private:
 
     //! Broadcasts a message from the server to the list of clients
     void broadcastFromServer(const CoSocket::peers_t& toIds, const miQMessage &qmsg);
+
+    void stopServer();
 
     CoSocket* findClient(int id);
     CoSocket::peers_t peerIds(CoSocket* client);

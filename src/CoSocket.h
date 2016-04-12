@@ -71,6 +71,7 @@ public:
     void setName(const QString&);
     const QString& getName();
 
+    void close();
     bool isClosed();
     bool isValid();
 
