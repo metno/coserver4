@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT([coserver4], [5.0.1], [diana@met.no])
+AC_INIT([coserver4], [5.1.0], [diana@met.no])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11 foreign parallel-tests])
