@@ -126,6 +126,9 @@ void CoServer4::broadcastFromClient(CoSocket* sender, const ClientIds& toIds, co
 {
     METLIBS_LOG_SCOPE();
     METLIBS_LOG_DEBUG(LOGVAL(sender->id()) << LOGVAL(toIds.size()) << LOGVAL(qmsg.command()));
+    std::vector<CoSocket*> sendTo;
+    if (!toIds.empty())
+        sendTo.reserve(toIds.size());
     for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
         CoSocket* c = it->second;
         if (c == sender)
@@ -135,10 +138,15 @@ void CoServer4::broadcastFromClient(CoSocket* sender, const ClientIds& toIds, co
             continue;
         }
         if (sender->isPeer(c)) {
-            c->sendMessage(sender->id(), qmsg);
+            sendTo.push_back(c);
         } else {
             METLIBS_LOG_DEBUG("not a peer: " << LOGVAL(c->id()));
         }
+    }
+
+    for (std::vector<CoSocket*>::iterator it = sendTo.begin(); it != sendTo.end(); it++) {
+        CoSocket* c = *it;
+        c->sendMessage(sender->id(), qmsg);
     }
 }
 
