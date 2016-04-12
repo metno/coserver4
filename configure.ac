@@ -17,13 +17,11 @@ AC_CHECK_HEADERS([string vector sstream fstream])
 METNO_PROG_PKG_CONFIG
 METNO_REQUIRE_QT4([
 	Core
-	Gui
 	Network
  ])
 METNO_REQUIRE_PKG([MILOGGER], [miLogger])
-METNO_REQUIRE_PKG([PUTOOLS], [puTools])
 METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])
-METNO_REQUIRE_PKG([COSERVER], [coserver])
+METNO_REQUIRE_PKG([COSERVER], [coserver], [2.0.5])
 
 GTEST_CHECK([test/gtest])
 

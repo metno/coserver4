@@ -4,13 +4,11 @@ noinst_LIBRARIES = libco4server.a
 
 qt_sources = \
 	CoServer4.cc \
-	CoSocket.cc  \
-	CoConsole.cc
+	CoSocket.cc
 qt_headers = $(qt_sources:.cc=.h)
 qt_moc = $(qt_headers:.h=_moc.cc)
 
 libco4server_a_SOURCES = \
-	miCommandLineStd.cc \
 	$(qt_sources)
 
 nodist_libco4server_a_SOURCES = $(qt_moc)

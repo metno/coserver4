@@ -5,83 +5,59 @@
  */
 
 #include "CoServer4.h"
-#include "miCommandLineStd.h"
 
 #include <QApplication>
 #include <QUrl>
 
-#include <cstdlib>
-#include <string>
+#include <iostream>
 
-#include <puTools/miStringFunctions.h>
 #include <coserver/QLetterCommands.h>
 
 #define MILOGGER_CATEGORY "coserver4.main"
 #include <miLogger/miLogging.h>
 
-using namespace std;
-using namespace miutil;
+static void helpAndExit(const char* argv0)
+{
+    std::cerr << argv0 << " [-d|--dynamic] [-u|--url <URL>] [-L|--log4cpp-properties-file]\n"
+              << " -d enables dynamic mode\n"
+              << " -u specifies socket, co4://localhost:12345/ or local:///path/to/socket\n"
+              << " -L specified logging config\n"
+              << std::endl;
+    exit(1);
+}
 
 int main(int argc, char *argv[])
 {
-#ifdef _DEBUG
-    cerr << "Coserver main program called" << endl;
-#endif
-
-#ifdef _DEBUG
-    cerr << "argc: " << argc << endl;
-
-    for(int i=0;i<argc;i++) {
-        cerr << "argv: " << miString(argv[i]) << endl;
-    }
-#endif
-
-    // parsing commandline-arguments
-    vector<miCommandLineStd::option> opt(5);
-    std::string logfile;
-
-    /*
-  // TODO: Put these in configfile
-bool portFromRange = false;
-  vector<quint16> portRange(10);
-
-  for (int i = 0; i < 9; i++) {
-   portRange[i] = (quint16)49151 + i;
-  }
-*/
-    opt[0].flag = 'd';
-    opt[0].alias = "dynamic";
-    opt[0].hasArg = false;
-
-    opt[2].flag = 'u';
-    opt[2].alias = "url";
-    opt[2].hasArg = true;
-
-    opt[3].flag = 'L';
-    opt[3].alias = "log4cpp-properties-file";
-    opt[3].hasArg = true;
-
-    miCommandLineStd cl(opt, argc, argv);
-
-    QUrl url;
-    if (cl.hasFlag('u') && cl.arg('u').size() >= 0) {
-        url.setUrl(QString::fromStdString(cl.arg('u')[0]));
-    } else {
-        url.setScheme("co4");
-        url.setHost("localhost");
-        url.setPort(qmstrings::port);
-    }
-
-    std::auto_ptr<milogger::LoggingConfig> log4cpp;
-    if (cl.hasFlag('L') && cl.arg('L').size() > 0) {
-        log4cpp.reset(new milogger::LoggingConfig((cl.arg('L'))[0]));
-    } else {
-        log4cpp.reset(new milogger::LoggingConfig(""));
-    }
-
-    bool dynamic = cl.hasFlag('d');
-
     QCoreApplication app(argc, argv);
+
+    bool dynamic = false;
+    QUrl url;
+    url.setScheme("co4");
+    url.setHost("localhost");
+    url.setPort(qmstrings::port);
+    std::string logconf;
+
+    const QStringList args = app.arguments();
+    for (int i=1; i<args.count(); ++i) {
+        const QString& option = args.at(i);
+        if (option == "-d" || option == "--dynamic") {
+            dynamic = true;
+        } else if (option == "-u" || option == "--url") {
+            i += 1;
+            if (i < args.count())
+                url.setUrl(args.at(i));
+            else
+                helpAndExit(argv[0]);
+        } else if (option == "-L" || option == "--log4cpp-properties-file") {
+            i += 1;
+            if (i < args.count())
+                logconf = args.at(i).toStdString();
+            else
+                helpAndExit(argv[0]);
+        }
+    }
+
+    milogger::LoggingConfig log4cpp(logconf);
     CoServer4 *server = new CoServer4(url, dynamic);
     if (!server->ready())
         exit(1);
