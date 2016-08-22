@@ -134,14 +134,17 @@ void CoServer4::broadcastFromClient(CoSocket* sender, const ClientIds& toIds, co
 {
     METLIBS_LOG_SCOPE();
     METLIBS_LOG_DEBUG(LOGVAL(sender->id()) << LOGVAL(toIds.size()) << LOGVAL(qmsg.command()));
+    const bool to_all = toIds.empty()
+            || toIds.count(qmstrings::all)
+            || (toIds.size() == 1 && *toIds.begin() == qmstrings::default_id);
     std::vector<CoSocket*> sendTo;
-    if (!toIds.empty())
+    if (!to_all)
         sendTo.reserve(toIds.size());
     for (clients_t::iterator it = clients.begin(); it != clients.end(); it++) {
         CoSocket* c = it->second;
         if (c == sender)
             continue;
-        if (!toIds.empty() && toIds.count(c->id()) == 0) {
+        if (!to_all && toIds.count(c->id()) == 0) {
             METLIBS_LOG_DEBUG(LOGVAL(c->id()) <<  LOGVAL(toIds.empty()) << LOGVAL(toIds.count(c->id())));
             continue;
         }
@@ -197,6 +200,9 @@ void CoServer4::onClientConnectionClosed(CoSocket* client)
 void CoServer4::onClientReceivedMessage(CoSocket* client, const ClientIds& toIds, const miQMessage &qmsg)
 {
     METLIBS_LOG_SCOPE(LOGVAL(qmsg.command()));
+    if (toIds.count(qmstrings::default_id))
+        METLIBS_LOG_WARN("client id " << client->id() << " sends command " << qmsg.command()
+                << "to deprecated 'default_id'");
     if (!messageToServer(client, toIds, qmsg))
         broadcastFromClient(client, toIds, qmsg);
 }
@@ -221,7 +227,8 @@ bool CoServer4::messageToServer(CoSocket *client, const ClientIds& toIds, const 
 {
     METLIBS_LOG_SCOPE();
 
-    const int toId1 = (toIds.size() == 1) ? *toIds.begin() : -1;
+    const int toId1 = (toIds.size() == 1 && *toIds.begin() != qmstrings::default_id)
+            ? *toIds.begin() : qmstrings::all;
 
     if (qmsg.command() == "SETTYPE") {
         handleSetType(client, qmsg);
