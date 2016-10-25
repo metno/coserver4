@@ -1,3 +1,10 @@
+coserver4 (5.1.2-1) unstable; urgency=low
+
+  * use default coserver4 port if not specified in url
+  * listen on address specified in url
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Tue, 25 Oct 2016 08:00:08 +0100
+
 coserver4 (5.1.1-1) unstable; urgency=low
 
   * treat qmstrings::default_id like "all"
