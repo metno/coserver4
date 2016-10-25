@@ -75,7 +75,7 @@ CoServer4::CoServer4(const QUrl& url, bool dm)
 
     if (url.scheme() == "co4") {
         tcpServer = new QTcpServer(this);
-        tcpServer->listen(QHostAddress::Any, url.port());
+        tcpServer->listen(QHostAddress::Any, url.port(qmstrings::port));
         connect(tcpServer, SIGNAL(newConnection()),
                 SLOT(onNewConnection()));
     } else if (url.scheme() == "local") {
