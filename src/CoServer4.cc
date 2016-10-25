@@ -37,6 +37,7 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QUrl>
+#include <QtNetwork/QHostInfo>
 
 #include <cstdlib>
 
@@ -74,8 +75,24 @@ CoServer4::CoServer4(const QUrl& url, bool dm)
     METLIBS_LOG_SCOPE(LOGVAL(dynamicMode));
 
     if (url.scheme() == "co4") {
+        QHostAddress address;
+        const QString& host = url.host();
+        if (host.isEmpty()) {
+            METLIBS_LOG_INFO("listening on any interface");
+            address = QHostAddress::Any;
+        } else {
+            const QHostInfo hi = QHostInfo::fromName(host);
+            if (!hi.addresses().isEmpty()) {
+                address = hi.addresses().first();
+                METLIBS_LOG_INFO("listening on '" << host << "', which resolved to '" << address.toString() << "'");
+            }
+        }
+        const int port = url.port(qmstrings::port);
+        METLIBS_LOG_INFO("listening on port " << port);
         tcpServer = new QTcpServer(this);
-        tcpServer->listen(QHostAddress::Any, url.port(qmstrings::port));
+        if (!tcpServer->listen(address, port)) {
+            METLIBS_LOG_ERROR("cannot listen: " << tcpServer->errorString());
+        }
         connect(tcpServer, SIGNAL(newConnection()),
                 SLOT(onNewConnection()));
     } else if (url.scheme() == "local") {
@@ -88,7 +105,9 @@ CoServer4::CoServer4(const QUrl& url, bool dm)
             }
         }
         localServer = new QLocalServer(this);
-        localServer->listen(url.path());
+        if (!localServer->listen(url.path())) {
+            METLIBS_LOG_ERROR("cannot listen: " << localServer->errorString());
+        }
         connect(localServer, SIGNAL(newConnection()),
                 SLOT(onNewConnection()));
     } else {

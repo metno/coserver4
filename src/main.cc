@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     bool dynamic = false;
     QUrl url;
     url.setScheme("co4");
-    url.setHost("localhost");
+    url.setHost("");
     url.setPort(qmstrings::port);
     std::string logconf;
 
