@@ -3,10 +3,14 @@ Section: science
 Priority: extra
 Maintainer: Norwegian Meteorological Institute met.no <diana@met.no>
 Build-Depends: debhelper (>= 9),
- autoconf (>=2.62), automake (>= 1.11), libtool (>= 2.4.2), pkg-config,
- metlibs-milogger-dev (>= 5.0.1),
- metlibs-qutilities-dev (>= 5.1.2),
- metlibs-coserver-dev (>= 2.0.5)
+ autoconf (>=2.62), automake (>= 1.11), libtool (>= 2.4.2),
+ pkg-config,
+ qtbase5-dev,
+ qtbase5-dev-tools,
+ qttools5-dev-tools,
+ metlibs-milogger-dev (>= 6.0.0),
+ metlibs-qutilities-qt5-dev (>= 8.0.0),
+ metlibs-coserver-qt5-dev (>= 3.0.0)
 Standards-Version: 3.9.2
 
 Package: coserver4

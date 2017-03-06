@@ -1,3 +1,9 @@
+coserver4 (5.2.0-1) unstable; urgency=low
+
+  * use Qt5
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Mon, 06 Mar 2017 08:00:08 +0100
+
 coserver4 (5.1.2-1) unstable; urgency=low
 
   * use default coserver4 port if not specified in url
