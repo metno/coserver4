@@ -30,7 +30,6 @@
 
 #include <coserver/miMessage.h>
 #include <coserver/miMessageIO.h>
-#include <miLogger/LogHandler.h>
 
 #define MILOGGER_CATEGORY "coserver4.CoSocket"
 #include <qUtilities/miLoggingQt.h>
