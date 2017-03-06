@@ -23,14 +23,16 @@ coserver4Test_SOURCES = \
 
 nodist_coserver4Test_SOURCES = $(coserver4Test_QTMOC)
 
-AM_CXXFLAGS = -I$(top_srcdir)/src \
+AM_CPPFLAGS = -W -Wall -O2 -g -fPIC
+AM_LDFLAGS  = -fPIC
+AM_CPPFLAGS += -I$(top_srcdir)/src \
 	-DTEST_SRCDIR=\"$(abs_srcdir)/\" \
 	-DTEST_BUILDDIR=\"$(abs_builddir)/\"
 LDADD = ../src/libco4server.a
 
-AM_CXXFLAGS += $(QT4_CPPFLAGS) $(COSERVER_CPPFLAGS) $(QUTILITIES_CPPFLAGS) $(PUTOOLS_CPPFLAGS) $(MILOGGER_CPPFLAGS) $(gtest_CPPFLAGS)
-AM_LDFLAGS =   $(QT4_LDFLAGS)  $(COSERVER_LDFLAGS)  $(QUTILITIES_LDFLAGS)  $(PUTOOLS_LDFLAGS)  $(MILOGGER_LDFLAGS)  $(gtest_LDFLAGS)
-LDADD +=       $(QT4_LIBS)     $(COSERVER_LIBS)     $(QUTILITIES_LIBS)     $(PUTOOLS_LIBS)     $(MILOGGER_LIBS)     $(gtest_LIBS)
+AM_CPPFLAGS += $(PC_CPPFLAGS) $(gtest_CPPFLAGS)
+AM_LDFLAGS  += $(PC_LDFLAGS)  $(gtest_LDFLAGS)
+LDADD +=       $(PC_LIBS)     $(gtest_LIBS)
 
 qt_moc = $(coserver4Test_QTMOC)
 

@@ -188,8 +188,10 @@ void CoSocket::tcpError(QAbstractSocket::SocketError e)
 
     if (QAbstractSocket::RemoteHostClosedError == e)
         METLIBS_LOG_INFO("client disconnect");
+    else if (tcpSocket)
+        METLIBS_LOG_ERROR("error " << tcpSocket->errorString());
     else
-        METLIBS_LOG_INFO("error " << e);
+        METLIBS_LOG_ERROR("error " << e << " (no tcpSocket!?)");
 }
 
 void CoSocket::localError(QLocalSocket::LocalSocketError e)
@@ -198,8 +200,10 @@ void CoSocket::localError(QLocalSocket::LocalSocketError e)
 
     if (QLocalSocket::PeerClosedError == e)
         METLIBS_LOG_INFO("client disconnect");
+    else if (localSocket)
+        METLIBS_LOG_ERROR("error " << localSocket->errorString());
     else
-        METLIBS_LOG_INFO("error " << e);
+        METLIBS_LOG_ERROR("error " << e << " (no localSocket!?)");
 }
 
 void CoSocket::close()

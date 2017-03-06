@@ -67,8 +67,8 @@ void addRegisteredClient(miQMessage& reg, CoSocket* c)
 } // namespace
 
 CoServer4::CoServer4(const QUrl& url, bool dm)
-    : nextId(0)
-    , dynamicMode(dm)
+    : dynamicMode(dm)
+    , nextId(0)
     , tcpServer(0)
     , localServer(0)
 {

@@ -12,16 +12,17 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
+AX_CXX_COMPILE_STDCXX_11([noext])
+
 AC_CHECK_HEADERS([string vector sstream fstream])
 
-METNO_PROG_PKG_CONFIG
-METNO_REQUIRE_QT4([
-	Core
-	Network
+METNO_REQUIRE_PKGS([PC], [
+  metlibs-milogger >= 6.0.0
+  metlibs-qutilities-qt5 >= 8.0.0
+  metlibs-coserver-qt5 >= 3.0.0
+  Qt5Core Qt5Network
  ])
-METNO_REQUIRE_PKG([MILOGGER], [miLogger])
-METNO_REQUIRE_PKG([QUTILITIES], [qUtilities])
-METNO_REQUIRE_PKG([COSERVER], [coserver], [2.0.5])
+METNO_CHECK_QT5_TOOLS()
 
 GTEST_CHECK([test/gtest])
 

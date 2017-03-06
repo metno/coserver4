@@ -122,7 +122,7 @@ Q_SIGNALS:
 private:
     QTcpSocket* tcpSocket;
     QLocalSocket* localSocket;
-    std::auto_ptr<miMessageIO> io;
+    std::unique_ptr<miMessageIO> io;
     bool closed;
 
     int mId;

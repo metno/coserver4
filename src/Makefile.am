@@ -13,10 +13,11 @@ libco4server_a_SOURCES = \
 
 nodist_libco4server_a_SOURCES = $(qt_moc)
 
-AM_CPPFLAGS= -DNOLOG4CXX
-AM_CXXFLAGS=$(QT4_CPPFLAGS) $(COSERVER_CPPFLAGS) $(QUTILITIES_CPPFLAGS) $(PUTOOLS_CPPFLAGS) $(MILOGGER_CPPFLAGS)
-AM_LDFLAGS= $(QT4_LDFLAGS)  $(COSERVER_LDFLAGS)  $(QUTILITIES_LDFLAGS)  $(PUTOOLS_LDFLAGS)  $(MILOGGER_LDFLAGS)  
-LDADD=      $(QT4_LIBS)     $(COSERVER_LIBS)     $(QUTILITIES_LIBS)     $(PUTOOLS_LIBS)     $(MILOGGER_LIBS)
+AM_CPPFLAGS = -W -Wall -O2 -g -fPIC
+AM_LDFLAGS  = -fPIC
+AM_CPPFLAGS += $(PC_CPPFLAGS)
+AM_LDFLAGS  += $(PC_LDFLAGS)
+LDADD       = $(PC_LIBS)
 
 coserver4_SOURCES = main.cc
 coserver4_LDADD = libco4server.a $(LDADD)
@@ -29,3 +30,4 @@ nodist_coserver4_stop_SOURCES = $(css_moc)
 $(qt_moc) $(css_moc): %_moc.cc: %.h
 	$(MOC4) $< -o $@
 
+CLEANFILES = $(qt_moc) $(css_moc)

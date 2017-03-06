@@ -87,11 +87,12 @@ private:
     CoSocket::peers_t clientsForUser(CoSocket* client, int protoMin, int protoMax);
 
 private:
-    QTcpServer* tcpServer;
-    QLocalServer* localServer;
     bool dynamicMode;
 
     int nextId;
+
+    QTcpServer* tcpServer;
+    QLocalServer* localServer;
 
     typedef std::map<int, CoSocket*> clients_t;
     clients_t clients;
