@@ -3,11 +3,6 @@
 %:
 	dh $@ --parallel
 
-.PHONY: override_dh_auto_configure
-override_dh_auto_configure:
-	./autogen.sh
-	./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
-
 # we skip the tests when building a package -- they are timing
 # dependent and might fail intermittently
 .PHONY: override_dh_auto_test
