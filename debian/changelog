@@ -1,3 +1,9 @@
+coserver4 (5.3.0-1) unstable; urgency=low
+
+  * cmake build
+
+ -- Alexander Bürger <alexander.buerger@met.no>  Mon, 18 Jul 2022 08:00:08 +0100
+
 coserver4 (5.2.0-1) unstable; urgency=low
 
   * use Qt5
